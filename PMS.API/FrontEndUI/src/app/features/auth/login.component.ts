@@ -27,7 +27,7 @@ import { AuthService } from '../../core/auth/auth.service';
   `
 })
 export class LoginComponent {
-  private readonly auth = inject(AuthService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   userName = '';
@@ -38,7 +38,7 @@ export class LoginComponent {
   submit(): void {
     this.error.set('');
     this.loading.set(true);
-    this.auth.login({ userName: this.userName.trim(), password: this.password }).subscribe({
+    this.authService.login({ userName: this.userName.trim(), password: this.password }).subscribe({
       next: () => {
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/dashboard';
         void this.router.navigateByUrl(returnUrl);

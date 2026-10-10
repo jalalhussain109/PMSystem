@@ -44,6 +44,17 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // AutoMapper
 builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Client", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 
 var app = builder.Build();
 
@@ -60,9 +71,14 @@ if (app.Environment.IsDevelopment())
 
 // Global Exception Middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
 app.UseHttpsRedirection();
 
+app.UseCors("Client");
+
+app.UseAuthentication();
 app.UseAuthorization();
+
 
 app.MapControllers();
 

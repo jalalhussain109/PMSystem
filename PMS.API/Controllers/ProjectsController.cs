@@ -31,7 +31,9 @@ namespace PMS.API.Controllers
         public async Task<IActionResult> List()
         {
             var result = await _projectService.ListAsync();
-            return (IActionResult)result;
+            if (result.NotFound) return NotFound();
+            if (!result.Succeeded) return BadRequest(new { errors = result.Errors });
+            return Ok(result.Data);
         }
 
         [HttpGet("{id:long}")]
