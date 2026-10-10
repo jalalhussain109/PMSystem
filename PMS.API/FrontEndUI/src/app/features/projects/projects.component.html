@@ -31,6 +31,7 @@
           <th>DESCRIPTION</th>
           <th>STATUS</th>
           <th>END DATE</th>
+          <th>ACTIONS</th>
         </tr>
       </thead>
       <tbody>
@@ -43,9 +44,72 @@
             <td>{{ project.description || '—' }}</td>
             <td><span class="status-pill">{{ project.status || 'Active' }}</span></td>
             <td>{{ project.endDate ? (project.endDate | date:'mediumDate') : '—' }}</td>
+            <td class="row-actions">
+              <button type="button" class="table-action" (click)="viewDetails(project)">View Details</button>
+              <button type="button" class="table-action" (click)="editDetails(project)">Edit</button>
+            </td>
           </tr> 
         }
       </tbody>
     </table>
+  </div>
+}
+
+@if (viewingProject(); as project) {
+  <div class="modal-backdrop" (click)="closeDetails()">
+    <section class="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-details-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <span class="eyebrow">PROJECT DETAILS</span>
+          <h2 id="project-details-title">{{ project.name }}</h2>
+        </div>
+        <button type="button" class="modal-close" aria-label="Close project details" (click)="closeDetails()">×</button>
+      </header>
+      <dl class="project-details">
+        <div><dt>Project code</dt><dd>{{ project.projectCode || '—' }}</dd></div>
+        <div><dt>Status</dt><dd>{{ project.status || 'Active' }}</dd></div>
+        <div><dt>Priority</dt><dd>{{ project.priority === undefined ? '—' : ['Low', 'Medium', 'High', 'Critical'][project.priority] || project.priority }}</dd></div>
+        <div><dt>Start date</dt><dd>{{ project.startDate ? (project.startDate | date:'mediumDate') : '—' }}</dd></div>
+        <div><dt>End date</dt><dd>{{ project.endDate ? (project.endDate | date:'mediumDate') : '—' }}</dd></div>
+        <div class="details-description"><dt>Description</dt><dd>{{ project.description || 'No description provided.' }}</dd></div>
+      </dl>
+    </section>
+  </div>
+}
+
+@if (editingProject(); as project) {
+  <div class="modal-backdrop" (click)="closeEdit()">
+    <section class="project-modal" role="dialog" aria-modal="true" aria-labelledby="edit-project-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <span class="eyebrow">PROJECT SETTINGS</span>
+          <h2 id="edit-project-title">Edit project</h2>
+        </div>
+        <button type="button" class="modal-close" aria-label="Close edit project" [disabled]="saving()" (click)="closeEdit()">×</button>
+      </header>
+      <form #projectForm="ngForm" (ngSubmit)="saveProject()">
+        <div class="form-grid">
+          <label>Project code<input name="projectCode" [(ngModel)]="editForm.projectCode" required></label>
+          <label>Project name<input name="projectName" [(ngModel)]="editForm.projectName" required></label>
+          <label>Status<input [value]="project.status || 'Active'" readonly></label>
+          <label>Priority
+            <select name="priority" [(ngModel)]="editForm.priority" required>
+              <option [ngValue]="0">Low</option>
+              <option [ngValue]="1">Medium</option>
+              <option [ngValue]="2">High</option>
+              <option [ngValue]="3">Critical</option>
+            </select>
+          </label>
+          <label>Start date<input type="date" name="startDate" [(ngModel)]="editForm.startDate"></label>
+          <label>End date<input type="date" name="endDate" [(ngModel)]="editForm.endDate"></label>
+          <label class="form-full">Description<textarea name="description" [(ngModel)]="editForm.description" rows="3"></textarea></label>
+        </div>
+        @if (actionError()) { <p class="form-error" role="alert">{{ actionError() }}</p> }
+        <footer class="modal-actions">
+          <button type="button" class="secondary-button" [disabled]="saving()" (click)="closeEdit()">Cancel</button>
+          <button type="submit" class="primary-button compact" [disabled]="projectForm.invalid || saving()">{{ saving() ? 'Saving…' : 'Save changes' }}</button>
+        </footer>
+      </form>
+    </section>
   </div>
 }

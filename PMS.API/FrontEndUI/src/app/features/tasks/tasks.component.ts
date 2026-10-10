@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { finalize } from 'rxjs';
 import { TaskDto, TaskService } from './task.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 const SAMPLE_TASKS: TaskDto[] = [
   { id: 201, title: 'Review homepage wireframes', projectName: 'Website Redesign', status: 'In Progress', dueDate: '2026-10-14' },
@@ -25,15 +26,17 @@ export class TasksComponent {
   readonly error = signal('');
   readonly showingSampleData = signal(false);
   constructor() { this.reload(); }
-  reload(): void {
-    this.loading.set(true); this.error.set(''); this.showingSampleData.set(false);
+ reload(): void {
+    this.loading.set(true);
+    this.error.set('');
+    this.showingSampleData.set(false);
     this.service.getAll().pipe(finalize(() => this.loading.set(false))).subscribe({
       next: items => {
         const tasks = items ?? [];
         this.showingSampleData.set(tasks.length === 0);
-        this.tasks.set(tasks.length === 0 ? SAMPLE_TASKS : tasks);
+        this.tasks.set(tasks.length ? tasks : SAMPLE_TASKS);
       },
-      error: err => this.error.set(err.status === 401 ? 'Your session may have expired. Please sign in again.' : err.status === 403 ? 'Your account does not have permission to view tasks.' : 'Check the API URL, endpoint, and network connection.')
+      error: (err: HttpErrorResponse) => this.error.set(err.status === 401 ? 'Your session may have expired. Please sign in again.' : err.status === 403 ? 'Your account does not have permission to view tasks.' : 'Check the API URL, endpoint, and network connection.')
     });
   }
 }
