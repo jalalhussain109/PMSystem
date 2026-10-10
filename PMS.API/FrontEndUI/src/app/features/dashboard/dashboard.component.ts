@@ -5,15 +5,7 @@ import { RouterLink } from '@angular/router';
   selector: 'app-dashboard',
   standalone: true,
   imports: [RouterLink],
-  template: `
-    <div class="page-heading"><div><span class="eyebrow">OVERVIEW</span><h2>Your workspace</h2><p class="muted">A clear view of the work moving your team forward.</p></div><a class="primary-button compact" routerLink="/projects">Explore projects <span>→</span></a></div>
-    <div class="stats-grid">
-      <article class="stat-card"><div class="stat-top"><span class="stat-icon violet">◫</span><span class="stat-caption">PORTFOLIO</span></div><div class="stat-number">—</div><div class="stat-label">Active projects</div><div class="stat-foot">Connect your projects API to load data</div></article>
-      <article class="stat-card"><div class="stat-top"><span class="stat-icon blue">✓</span><span class="stat-caption">EXECUTION</span></div><div class="stat-number">—</div><div class="stat-label">Open tasks</div><div class="stat-foot">Track work across your team</div></article>
-      <article class="stat-card"><div class="stat-top"><span class="stat-icon amber">◷</span><span class="stat-caption">UPCOMING</span></div><div class="stat-number">—</div><div class="stat-label">Due this week</div><div class="stat-foot">Stay ahead of deadlines</div></article>
-      <article class="stat-card"><div class="stat-top"><span class="stat-icon green">♙</span><span class="stat-caption">PEOPLE</span></div><div class="stat-number">—</div><div class="stat-label">Team members</div><div class="stat-foot">Collaborate in one place</div></article>
-    </div>
-    <div class="content-grid"><article class="panel"><div class="panel-heading"><div><h3>Getting started</h3><p class="muted">Set up your workspace in a few steps.</p></div><span class="panel-symbol">✦</span></div><div class="check-row"><span class="check-number">01</span><div><strong>Connect your API</strong><p>Set the API URL in <code>environment.ts</code>.</p></div><span class="row-arrow">↗</span></div><div class="check-row"><span class="check-number">02</span><div><strong>Sign in with Identity</strong><p>Use your ASP.NET Core Identity account.</p></div><span class="row-arrow">↗</span></div><div class="check-row"><span class="check-number">03</span><div><strong>Configure permissions</strong><p>Align route permissions with your JWT claims.</p></div><span class="row-arrow">↗</span></div></article><article class="panel quick-panel"><span class="eyebrow">QUICK ACCESS</span><h3>Move work forward</h3><p class="muted">Jump straight into the area you need.</p><a routerLink="/projects" class="quick-link"><span class="quick-icon violet">◫</span><span><strong>Projects</strong><small>Plan and organize initiatives</small></span><span class="row-arrow">→</span></a><a routerLink="/tasks" class="quick-link"><span class="quick-icon blue">✓</span><span><strong>My tasks</strong><small>Focus on your next action</small></span><span class="row-arrow">→</span></a></article></div>
-  `
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent {}
