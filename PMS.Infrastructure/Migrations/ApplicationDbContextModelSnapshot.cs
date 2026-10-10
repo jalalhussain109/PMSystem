@@ -224,9 +224,8 @@ namespace PMS.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
@@ -279,8 +278,7 @@ namespace PMS.Infrastructure.Migrations
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
@@ -310,9 +308,6 @@ namespace PMS.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<long?>("MemberId")
-                        .HasColumnType("bigint");
-
                     b.Property<long?>("ModifiedBy")
                         .HasColumnType("bigint");
 
@@ -331,9 +326,10 @@ namespace PMS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MemberId");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("ProjectId");
+                    b.HasIndex("ProjectId", "UserId")
+                        .IsUnique();
 
                     b.ToTable("ProjectMembers");
                 });
@@ -347,9 +343,6 @@ namespace PMS.Infrastructure.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<long?>("AssignedTo")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("AssigneeId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("CompletedDate")
@@ -388,7 +381,7 @@ namespace PMS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssigneeId");
+                    b.HasIndex("AssignedTo");
 
                     b.HasIndex("ParentTaskId");
 
@@ -450,26 +443,29 @@ namespace PMS.Infrastructure.Migrations
 
             modelBuilder.Entity("PMS.Domain.Entities.ProjectMember", b =>
                 {
-                    b.HasOne("PMS.Domain.Entities.ApplicationUser", "Member")
-                        .WithMany()
-                        .HasForeignKey("MemberId");
-
                     b.HasOne("PMS.Domain.Entities.Project", "Project")
                         .WithMany("Members")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Member");
+                    b.HasOne("PMS.Domain.Entities.ApplicationUser", "User")
+                        .WithMany("ProjectMemberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Project");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PMS.Domain.Entities.TaskItem", b =>
                 {
-                    b.HasOne("PMS.Domain.Entities.ApplicationUser", "Assignee")
-                        .WithMany()
-                        .HasForeignKey("AssigneeId");
+                    b.HasOne("PMS.Domain.Entities.ApplicationUser", "AssignedUser")
+                        .WithMany("AssignedTasks")
+                        .HasForeignKey("AssignedTo")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PMS.Domain.Entities.TaskItem", "ParentTask")
                         .WithMany("SubTasks")
@@ -481,11 +477,18 @@ namespace PMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Assignee");
+                    b.Navigation("AssignedUser");
 
                     b.Navigation("ParentTask");
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("PMS.Domain.Entities.ApplicationUser", b =>
+                {
+                    b.Navigation("AssignedTasks");
+
+                    b.Navigation("ProjectMemberships");
                 });
 
             modelBuilder.Entity("PMS.Domain.Entities.Project", b =>
