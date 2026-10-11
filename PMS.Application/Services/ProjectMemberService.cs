@@ -56,6 +56,13 @@ namespace PMS.Application.Services
             return ServiceResult<IEnumerable<ProjectMemberDto>>.Success(mapped);
         }
 
+        public async Task<ServiceResult<IEnumerable<ProjectMemberDto>>> ListByProjectAsync(long projectId)
+        {
+            var list = await _repository.ListByProjectAsync(projectId);
+            var mapped = list.Select(m => _mapper.Map<ProjectMemberDto>(m));
+            return ServiceResult<IEnumerable<ProjectMemberDto>>.Success(mapped);
+        }
+
         public async Task<ServiceResult<ProjectMemberDto>> UpdateAsync(long id, UpdateProjectMemberDto dto)
         {
             var member = await _repository.GetByIdAsync(id);

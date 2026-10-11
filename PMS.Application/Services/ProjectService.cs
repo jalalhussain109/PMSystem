@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using PMS.Application.Common;
 using PMS.Application.DTOs;
 using PMS.Application.Interfaces;
@@ -15,7 +16,7 @@ namespace PMS.Application.Services
     {
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
-        private readonly AutoMapper.IMapper _mapper;
+        private readonly IMapper _mapper;
 
         public ProjectService(IProjectRepository projectRepository, IProjectMemberRepository projectMemberRepository, AutoMapper.IMapper mapper)
         {
@@ -83,6 +84,32 @@ namespace PMS.Application.Services
                 list.Add(await BuildProjectDto(p));
             }
             return ServiceResult<IEnumerable<ProjectDto>>.Success(list);
+        }
+
+        public async Task<ServiceResult<PagedResult<ProjectDto>>> ListPagedAsync(int page = 1, int pageSize = 20)
+        {
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 20;
+            if (pageSize > 100) pageSize = 100;
+
+            var projects = (await _projectRepository.GetAllAsync())
+                .OrderBy(project => project.ProjectName)
+                .ToList();
+            var totalCount = projects.Count;
+            var items = new List<ProjectDto>();
+            foreach (var project in projects.Skip((page - 1) * pageSize).Take(pageSize))
+            {
+                items.Add(await BuildProjectDto(project));
+            }
+
+            return ServiceResult<PagedResult<ProjectDto>>.Success(new PagedResult<ProjectDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            });
         }
 
         public async Task<ServiceResult<ProjectDto>> UpdateAsync(long id, UpdateProjectDto dto)

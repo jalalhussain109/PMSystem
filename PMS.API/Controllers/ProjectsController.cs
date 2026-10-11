@@ -28,12 +28,12 @@ namespace PMS.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> List()
+        public async Task<IActionResult> List([FromQuery] int? page = 1, [FromQuery] int? pageSize = 20)
         {
-            var result = await _projectService.ListAsync();
-            if (result.NotFound) return NotFound();
-            if (!result.Succeeded) return BadRequest(new { errors = result.Errors });
-            return Ok(result.Data);
+            var pagedResult = await _projectService.ListPagedAsync(page ?? 1, pageSize ?? 20);
+            if (pagedResult.NotFound) return NotFound();
+            if (!pagedResult.Succeeded) return BadRequest(new { errors = pagedResult.Errors });
+            return Ok(pagedResult);
         }
 
         [HttpGet("{id:long}")]

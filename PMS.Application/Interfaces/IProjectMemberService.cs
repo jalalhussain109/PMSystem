@@ -10,6 +10,7 @@ namespace PMS.Application.Interfaces
         Task<ServiceResult<ProjectMemberDto>> CreateAsync(CreateProjectMemberDto dto);
         Task<ServiceResult<ProjectMemberDto>> GetByIdAsync(long id);
         Task<ServiceResult<IEnumerable<ProjectMemberDto>>> ListAsync();
+        Task<ServiceResult<IEnumerable<ProjectMemberDto>>> ListByProjectAsync(long projectId);
         Task<ServiceResult<ProjectMemberDto>> UpdateAsync(long id, UpdateProjectMemberDto dto);
         Task<ServiceResult<bool>> DeleteAsync(long id);
     }

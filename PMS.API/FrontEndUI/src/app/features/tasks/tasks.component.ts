@@ -1,132 +1,129 @@
-import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { finalize, forkJoin } from 'rxjs';
-import { CreateTaskDto, TaskDto, TaskService } from './task.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ProjectDto, ProjectService } from '../projects/project.service';
-import { UserDto, UserService } from '../users/user.service';
-
-const SAMPLE_TASKS: TaskDto[] = [
-  { id: 201, title: 'Review homepage wireframes', projectName: 'Website Redesign', status: 'In Progress', dueDate: '2026-10-14' },
-  { id: 202, title: 'Finalize app store screenshots', projectName: 'Mobile App Launch', status: 'Open', dueDate: '2026-10-18' },
-  { id: 203, title: 'Implement account settings page', projectName: 'Customer Portal', status: 'In Progress', dueDate: '2026-10-22' },
-  { id: 204, title: 'Validate analytics event tracking', projectName: 'Analytics Dashboard', status: 'Completed', dueDate: '2026-10-08' },
-  { id: 205, title: 'Prepare stakeholder progress update', projectName: 'Website Redesign', status: 'Open', dueDate: '2026-10-28' }
-];
+import { TaskDto, TaskService } from './task.service';
 
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './tasks.component.html',
   styleUrl: './tasks.component.css'
 })
 export class TasksComponent {
   private readonly service = inject(TaskService);
   private readonly projectService = inject(ProjectService);
-  private readonly userService = inject(UserService);
+  private requestId = 0;
+
   readonly tasks = signal<TaskDto[]>([]);
-  readonly loading = signal(false);
-  readonly saving = signal(false);
-  readonly error = signal('');
-  readonly actionError = signal('');
-  readonly creatingTask = signal(false);
-  readonly lookupsLoading = signal(false);
-  readonly lookupError = signal('');
   readonly projects = signal<ProjectDto[]>([]);
-  readonly assignees = signal<UserDto[]>([]);
-  readonly showingSampleData = signal(false);
-  taskForm: CreateTaskDto & { projectId: number | null } = this.emptyTaskForm();
+  readonly loading = signal(false);
+  readonly error = signal('');
+  readonly projectsLoading = signal(false);
+  readonly projectsError = signal('');
+  readonly projectFilter = signal<number | null>(null);
+  readonly titleFilter = signal('');
+  readonly startDateFilter = signal('');
+  readonly endDateFilter = signal('');
+  readonly page = signal(1);
+  readonly pageSize = signal(20);
+  readonly totalCount = signal(0);
+  readonly totalPages = signal(0);
 
-  constructor() { this.reload(); }
+  constructor() {
+    this.reload();
+    this.loadProjects();
+  }
 
-  reload(): void {
+  reload(page = this.page()): void {
+    const requestId = ++this.requestId;
+    this.page.set(page);
     this.loading.set(true);
     this.error.set('');
-    this.showingSampleData.set(false);
-    this.service.getAll().pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: items => {
-        const tasks = items ?? [];
-        this.showingSampleData.set(tasks.length === 0);
-        this.tasks.set(tasks.length ? tasks : SAMPLE_TASKS);
+    this.service.getAll({
+      page,
+      pageSize: this.pageSize(),
+      search: this.titleFilter().trim() || undefined,
+      projectId: this.projectFilter() ?? undefined,
+      startFrom: this.startDateFilter() || undefined,
+      dueTo: this.endDateFilter() || undefined
+    }).pipe(finalize(() => {
+      if (requestId === this.requestId) this.loading.set(false);
+    })).subscribe({
+      next: result => {
+        if (requestId !== this.requestId) return;
+        this.tasks.set(result.items);
+        this.totalCount.set(result.totalCount);
+        this.page.set(result.page);
+        this.pageSize.set(result.pageSize);
+        this.totalPages.set(result.totalPages);
       },
-      error: (err: HttpErrorResponse) => this.error.set(err.status === 401 ? 'Your session may have expired. Please sign in again.' : err.status === 403 ? 'Your account does not have permission to view tasks.' : 'Check the API URL, endpoint, and network connection.')
+      error: (err: HttpErrorResponse) => {
+        if (requestId !== this.requestId) return;
+        this.error.set(err.status === 401
+          ? 'Your session may have expired. Please sign in again.'
+          : err.status === 403
+            ? 'Your account does not have permission to view tasks.'
+            : 'Check the API URL, endpoint, and network connection.');
+      }
     });
   }
 
-  addTask(): void {
-    this.actionError.set('');
-    this.lookupError.set('');
-    this.taskForm = this.emptyTaskForm();
-    this.creatingTask.set(true);
-    this.loadTaskLookups();
-  }
-
-  loadTaskLookups(): void {
-    this.lookupsLoading.set(true);
-    this.lookupError.set('');
-    forkJoin({
-      projects: this.projectService.getAll(),
-      users: this.userService.getAll()
-    }).pipe(finalize(() => this.lookupsLoading.set(false))).subscribe({
-      next: ({ projects, users }) => {
-        this.projects.set(projects);
-        this.assignees.set(users.filter(user => user.isActive));
-        if (projects.length === 0) this.lookupError.set('Create a project before adding a task.');
-      },
-      error: (err: HttpErrorResponse) => this.lookupError.set(err.status === 401
+  loadProjects(): void {
+    this.projectsLoading.set(true);
+    this.projectsError.set('');
+    this.projectService.getAll().pipe(finalize(() => this.projectsLoading.set(false))).subscribe({
+      next: projects => this.projects.set(projects),
+      error: (err: HttpErrorResponse) => this.projectsError.set(err.status === 401
         ? 'Your session may have expired. Please sign in again.'
         : err.status === 403
-          ? 'Your account does not have permission to view projects or users.'
-          : 'Could not load projects and users. Check the API and try again.')
+          ? 'Your account does not have permission to view projects.'
+          : 'Could not load projects for filtering.')
     });
   }
 
-  closeCreateTask(): void {
-    if (!this.saving()) this.creatingTask.set(false);
+  clearFilters(): void {
+    this.projectFilter.set(null);
+    this.titleFilter.set('');
+    this.startDateFilter.set('');
+    this.endDateFilter.set('');
+    this.reload(1);
   }
 
-  saveTask(): void {
-    const projectId = this.taskForm.projectId;
-    if (projectId == null || this.saving() || this.lookupsLoading() || this.lookupError()) return;
-
-    this.saving.set(true);
-    this.actionError.set('');
-    const { projectId: _projectId, ...task } = this.taskForm;
-    this.service.create(projectId, task).pipe(finalize(() => this.saving.set(false))).subscribe({
-      next: createdTask => {
-        const projectName = this.projects().find(project => project.id === projectId)?.name ?? null;
-        const taskWithProject = { ...createdTask, projectName };
-        this.tasks.update(tasks => this.showingSampleData() ? [taskWithProject] : [taskWithProject, ...tasks]);
-        this.showingSampleData.set(false);
-        this.creatingTask.set(false);
-      },
-      error: (err: HttpErrorResponse) => this.actionError.set(err.status === 401
-        ? 'Your session may have expired. Please sign in again.'
-        : err.status === 403
-          ? 'Your account does not have permission to create tasks.'
-          : 'Could not create the task. Check the details and try again.')
-    });
+  setProjectFilter(value: number | null): void {
+    this.projectFilter.set(value === null ? null : Number(value));
+    this.reload(1);
   }
 
-  projectDisplayName(project: ProjectDto): string {
-    return project.projectCode ? `${project.projectCode} — ${project.name}` : project.name;
+  setTitleFilter(value: string): void {
+    this.titleFilter.set(value);
+    this.reload(1);
   }
 
-  userDisplayName(user: UserDto): string {
-    return user.displayName?.trim() || user.userName?.trim() || user.email?.trim() || `User #${user.id}`;
+  setStartDateFilter(value: string): void {
+    this.startDateFilter.set(value);
+    this.reload(1);
   }
 
-  private emptyTaskForm(): CreateTaskDto & { projectId: number | null } {
-    return {
-      projectId: null,
-      title: '',
-      description: '',
-      assignedTo: null,
-      priority: 1,
-      startDate: null,
-      dueDate: null
-    };
+  setEndDateFilter(value: string): void {
+    this.endDateFilter.set(value);
+    this.reload(1);
+  }
+
+  setPageSize(value: number): void {
+    this.pageSize.set(Number(value));
+    this.reload(1);
+  }
+
+  previousPage(): void {
+    if (this.page() > 1) this.reload(this.page() - 1);
+  }
+
+  nextPage(): void {
+    if (this.page() < this.totalPages()) this.reload(this.page() + 1);
   }
 }

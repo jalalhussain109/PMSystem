@@ -37,7 +37,11 @@ namespace PMS.Infrastructure.Repositories
 
         public new async Task<IEnumerable<TaskItem>> GetAllAsync()
         {
-            return await base.GetAllAsync();
+            return await _dbContext.Tasks
+                .Include(t => t.AssignedUser)
+                .Include(t => t.Project)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public new async Task<TaskItem> UpdateAsync(TaskItem entity)

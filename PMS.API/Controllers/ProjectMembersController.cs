@@ -32,6 +32,14 @@ namespace PMS.API.Controllers
             return Ok(result.Data);
         }
 
+        [HttpGet("project/{projectId:long}")]
+        public async Task<IActionResult> ListByProject(long projectId)
+        {
+            var result = await _service.ListByProjectAsync(projectId);
+            if (!result.Succeeded) return BadRequest(new { errors = result.Errors });
+            return Ok(result.Data);
+        }
+
         [HttpGet("{id:long}")]
         public async Task<IActionResult> GetById(long id)
         {

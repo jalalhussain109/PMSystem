@@ -1,9 +1,9 @@
 <div class="page-heading">
-  <div><span class="eyebrow">WORK MANAGEMENT</span>
+  <div>
     <h2>Projects</h2>
     <p class="muted">View and organize projects in your workspace.</p>
   </div>
-  <button class="primary-button compact" type="button" (click)="addProject()">+ Add project</button>
+  <a class="primary-button compact" routerLink="/projects/add">+ Add project</a>
 </div>
 @if (loading()) { 
   <div class="empty-state">
@@ -33,7 +33,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (project of projects(); track project.id) { 
+        @for (project of projects(); track project.id) {
           <tr>
             <td>
               <strong>{{ project.name }}</strong>
@@ -43,124 +43,44 @@
             <td><span class="status-pill">{{ project.status || 'Active' }}</span></td>
             <td>{{ project.endDate ? (project.endDate | date:'mediumDate') : '—' }}</td>
             <td class="row-actions">
-              <button type="button" class="table-action icon-action" (click)="viewDetails(project)" aria-label="View project details" title="View details">
+              <a class="table-action icon-action" [routerLink]="['/projects', project.id, 'view']" aria-label="View project details" title="View details">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              </button>
-              <button type="button" class="table-action icon-action" (click)="editDetails(project)" aria-label="Edit project" title="Edit">
+              </a>
+              <a class="table-action icon-action" [routerLink]="['/projects', project.id, 'edit']" aria-label="Edit project" title="Edit">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"></path></svg>
+              </a>
+              <button class="table-action icon-action" (click)="deleteProject(project.id)" aria-label="Delete project" title="Delete">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6M10 6V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"></path></svg>
               </button>
             </td>
-          </tr> 
+          </tr>
+        } @empty {
+          <tr>
+            <td class="no-results" colspan="5">No projects found.</td>
+          </tr>
         }
       </tbody>
     </table>
   </div>
-}
-
-@if (viewingProject(); as project) {
-  <div class="modal-backdrop" (click)="closeDetails()">
-    <section class="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-details-title" (click)="$event.stopPropagation()">
-      <header class="modal-header">
-        <div>
-          <span class="eyebrow">PROJECT DETAILS</span>
-          <h2 id="project-details-title">{{ project.name }}</h2>
-        </div>
-        <button type="button" class="modal-close" aria-label="Close project details" (click)="closeDetails()">×</button>
-      </header>
-      <dl class="project-details">
-        <div><dt>Project code</dt><dd>{{ project.projectCode || '—' }}</dd></div>
-        <div><dt>Status</dt><dd>{{ project.status || 'Active' }}</dd></div>
-        <div><dt>Priority</dt><dd>{{ project.priority === undefined ? '—' : ['Low', 'Medium', 'High', 'Critical'][project.priority] || project.priority }}</dd></div>
-        <div><dt>Project manager</dt><dd>{{ getProjectManagerName(project.projectManagerId) }}</dd></div>
-        <div class="details-description"><dt>Team members</dt><dd>{{ getProjectMemberNames(project.memberIds) }}</dd></div>
-        <div><dt>Start date</dt><dd>{{ project.startDate ? (project.startDate | date:'mediumDate') : '—' }}</dd></div>
-        <div><dt>End date</dt><dd>{{ project.endDate ? (project.endDate | date:'mediumDate') : '—' }}</dd></div>
-        <div class="details-description"><dt>Description</dt><dd>{{ project.description || 'No description provided.' }}</dd></div>
-      </dl>
-    </section>
-  </div>
-}
-
-@if (editingProject() || creatingProject()) {
-  <div class="modal-backdrop" (click)="closeEdit()">
-    <section class="project-modal" role="dialog" aria-modal="true" aria-labelledby="edit-project-title" (click)="$event.stopPropagation()">
-      <header class="modal-header">
-        <div>
-          <span class="eyebrow">PROJECT SETTINGS</span>
-          <h2 id="edit-project-title">{{ creatingProject() ? 'Create project' : 'Edit project' }}</h2>
-        </div>
-        <button type="button" class="modal-close" aria-label="Close edit project" [disabled]="saving()" (click)="closeEdit()">×</button>
-      </header>
-      <form #projectForm="ngForm" (ngSubmit)="saveProject()">
-        <div class="form-grid">
-          <label>Project code<input name="projectCode" [(ngModel)]="editForm.projectCode" required></label>
-          <label>Project name<input name="projectName" [(ngModel)]="editForm.projectName" required></label>
-          @if (editingProject(); as project) {
-            <label>Status<input [value]="project.status || 'Active'" readonly></label>
-          }
-          <label>Priority
-            <select name="priority" [(ngModel)]="editForm.priority" required>
-              <option [ngValue]="0">Low</option>
-              <option [ngValue]="1">Medium</option>
-              <option [ngValue]="2">High</option>
-              <option [ngValue]="3">Critical</option>
-            </select>
-          </label>
-          <label>Start date<input type="date" name="startDate" [(ngModel)]="editForm.startDate"></label>
-          <label>End date<input type="date" name="endDate" [(ngModel)]="editForm.endDate"></label>
-          <label>Project manager
-            <select name="projectManagerId" [(ngModel)]="editForm.projectManagerId" [disabled]="managersLoading() || !!managersError()">
-              <option [ngValue]="null">Unassigned</option>
-              @for (manager of projectManagers(); track manager.id) {
-                <option [ngValue]="manager.id">{{ userDisplayName(manager) }}{{ manager.isActive ? '' : ' (Inactive)' }}</option>
-              }
-            </select>
-          </label>
-          <div class="team-members-field form-full">
-            <span class="field-label">Team members</span>
-            <div class="team-dropdown">
-              <button
-                type="button"
-                class="team-dropdown-trigger"
-                [disabled]="managersLoading() || !!managersError()"
-                [attr.aria-expanded]="teamDropdownOpen()"
-                aria-haspopup="listbox"
-                (click)="toggleTeamDropdown()">
-                <span>{{ selectedTeamMemberLabel() }}</span>
-                <span class="dropdown-chevron" aria-hidden="true">▾</span>
-              </button>
-              @if (teamDropdownOpen()) {
-                <div class="team-dropdown-menu" role="listbox" aria-multiselectable="true" aria-label="Select project team members">
-                  @for (member of selectableTeamMembers(); track member.id) {
-                    <label class="team-member-option">
-                      <input
-                        type="checkbox"
-                        [ngModel]="editForm.memberIds.includes(member.id)"
-                        [ngModelOptions]="{ standalone: true }"
-                        (ngModelChange)="setTeamMember(member.id, $event)">
-                      <span>{{ userDisplayName(member) }}{{ member.isActive ? '' : ' (Inactive)' }}</span>
-                    </label>
-                  } @empty {
-                    <p class="team-dropdown-empty">No users available.</p>
-                  }
-                </div>
-              }
-            </div>
-            <small class="field-hint">Select one or more users to add them to the project team.</small>
-          </div>
-          <label class="form-full">Description<textarea name="description" [(ngModel)]="editForm.description" rows="3"></textarea></label>
-        </div>
-        @if (managersLoading()) { <p class="form-error" role="status">Loading users…</p> }
-        @if (managersError()) {
-          <p class="form-error" role="alert">{{ managersError() }}</p>
-          <button type="button" class="secondary-button" (click)="loadProjectManagers()">Retry loading users</button>
-        }
-        @if (actionError()) { <p class="form-error" role="alert">{{ actionError() }}</p> }
-        <footer class="modal-actions">
-          <button type="button" class="secondary-button" [disabled]="saving()" (click)="closeEdit()">Cancel</button>
-          <button type="submit" class="primary-button compact" [disabled]="projectForm.invalid || saving() || managersLoading() || !!managersError()">{{ saving() ? 'Saving…' : creatingProject() ? 'Create project' : 'Save changes' }}</button>
-        </footer>
-      </form>
-    </section>
-  </div>
+  <nav class="pagination" aria-label="Project pages">
+    <span class="pagination-summary">
+      @if (totalCount()) {
+        Showing {{ (page() - 1) * pageSize() + 1 }}–{{ (page() - 1) * pageSize() + projects().length }} of {{ totalCount() }} projects
+      } @else {
+        No projects found
+      }
+    </span>
+    <label class="page-size">
+      Rows per page
+      <select [value]="pageSize()" (change)="setPageSizeFromEvent($event)">
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </label>
+    <button class="secondary-button" type="button" (click)="previousPage()" [disabled]="page() <= 1 || loading()">Previous</button>
+    <span class="page-indicator">Page {{ page() }} of {{ totalPages() || 1 }}</span>
+    <button class="secondary-button" type="button" (click)="nextPage()" [disabled]="page() >= totalPages() || loading()">Next</button>
+  </nav>
 }

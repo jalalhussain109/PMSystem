@@ -1,0 +1,43 @@
+<div class="page-heading">
+  <div>
+    <h2>Task details</h2>
+    <p class="muted">Review task information, assignment, and schedule.</p>
+  </div>
+  <div class="heading-actions">
+    @if (task(); as currentTask) {
+      <a class="primary-button compact" [routerLink]="['/tasks', currentTask.id, 'subtasks', 'add']">Add subtask</a>
+      <a class="primary-button compact" [routerLink]="['/tasks', currentTask.id, 'edit']">Edit task</a>
+    }
+    <a class="secondary-button" routerLink="/tasks">Back to tasks</a>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="empty-state"><span class="loader"></span><p>Loading task…</p></div>
+} @else if (error()) {
+  <div class="notice error-notice">
+    <strong>Could not load task</strong>
+    <p>{{ error() }}</p>
+    <button class="secondary-button" type="button" (click)="loadTask()">Try again</button>
+  </div>
+} @else if (task(); as currentTask) {
+  <section class="task-details-card">
+    <header class="details-card-header">
+      <div>
+        <span class="eyebrow">TASK #{{ currentTask.id }}</span>
+        <h2>{{ currentTask.title }}</h2>
+      </div>
+      <span class="status-pill">{{ currentTask.status || 'Open' }}</span>
+    </header>
+    @if (lookupsError()) { <p class="lookup-warning" role="status">{{ lookupsError() }}</p> }
+    <dl class="task-details">
+      <div><dt>Project</dt><dd>{{ projectName(currentTask) }}</dd></div>
+      <div><dt>Assignee</dt><dd>{{ assigneeName(currentTask.assignedTo) }}</dd></div>
+      <div><dt>Priority</dt><dd>{{ priorityName(currentTask.priority) }}</dd></div>
+      <div><dt>Start date</dt><dd>{{ currentTask.startDate ? (currentTask.startDate | date:'mediumDate') : '—' }}</dd></div>
+      <div><dt>Due date</dt><dd>{{ currentTask.dueDate ? (currentTask.dueDate | date:'mediumDate') : '—' }}</dd></div>
+      <div><dt>Completed date</dt><dd>{{ currentTask.completedDate ? (currentTask.completedDate | date:'mediumDate') : '—' }}</dd></div>
+      <div class="details-description"><dt>Description</dt><dd>{{ currentTask.description || 'No description provided.' }}</dd></div>
+    </dl>
+  </section>
+}

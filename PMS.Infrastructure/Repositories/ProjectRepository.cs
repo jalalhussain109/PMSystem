@@ -24,20 +24,18 @@ namespace PMS.Infrastructure.Repositories
             return await base.AddAsync(project);
         }
 
-        public new async Task<bool> DeleteAsync(long id)
-        {
-            return await base.DeleteAsync(id);
-        }
+
 
         public new async Task<Project?> GetByIdAsync(long id)
         {
             return await _dbContext.Projects
-                .FirstOrDefaultAsync(project => project.Id == id);
+                .FirstOrDefaultAsync(project => project.Id == id && project.IsActive);
         }
 
         public new async Task<IEnumerable<Project>> GetAllAsync()
         {
             return await _dbContext.Projects
+                .Where(p => p.IsActive)
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -46,6 +44,18 @@ namespace PMS.Infrastructure.Repositories
         {
             project.ModifiedDate = DateTime.Now;
             return await base.UpdateAsync(project);
+        }
+
+        public new async Task<bool> DeleteAsync(long id)
+        {
+            var project = await _dbContext.Projects.FindAsync(id);
+            if (project == null) return false;
+            // Soft-delete
+            project.IsActive = false;
+            project.ModifiedDate = DateTime.Now;
+            _dbContext.Projects.Update(project);
+            await _dbContext.SaveChangesAsync();
+            return true;
         }
     }
 }

@@ -1,0 +1,42 @@
+<div class="page-heading">
+  <div>
+    <h2>Project details</h2>
+    <p class="muted">Review project information and team assignments.</p>
+  </div>
+  <div class="heading-actions">
+    @if (project(); as currentProject) {
+      <a class="primary-button compact" [routerLink]="['/projects', currentProject.id, 'edit']">Edit project</a>
+    }
+    <a class="secondary-button" routerLink="/projects">Back to projects</a>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="empty-state"><span class="loader"></span><p>Loading project…</p></div>
+} @else if (error()) {
+  <div class="notice error-notice">
+    <strong>Could not load project</strong>
+    <p>{{ error() }}</p>
+    <button class="secondary-button" type="button" (click)="loadProject()">Try again</button>
+  </div>
+} @else if (project(); as currentProject) {
+  <section class="project-details-card">
+    <header class="details-card-header">
+      <div>
+        <span class="eyebrow">{{ currentProject.projectCode || 'PROJECT' }}</span>
+        <h2>{{ currentProject.name }}</h2>
+      </div>
+      <span class="status-pill">{{ currentProject.status || 'Active' }}</span>
+    </header>
+    @if (usersError()) { <p class="users-warning" role="status">{{ usersError() }}</p> }
+    <dl class="project-details">
+      <div><dt>Project code</dt><dd>{{ currentProject.projectCode || '—' }}</dd></div>
+      <div><dt>Priority</dt><dd>{{ currentProject.priority === undefined ? '—' : ['Low', 'Medium', 'High', 'Critical'][currentProject.priority] || currentProject.priority }}</dd></div>
+      <div><dt>Project manager</dt><dd>{{ managerName(currentProject.projectManagerId) }}</dd></div>
+      <div><dt>Start date</dt><dd>{{ currentProject.startDate ? (currentProject.startDate | date:'mediumDate') : '—' }}</dd></div>
+      <div><dt>End date</dt><dd>{{ currentProject.endDate ? (currentProject.endDate | date:'mediumDate') : '—' }}</dd></div>
+      <div class="details-description"><dt>Team members</dt><dd>{{ memberNames(currentProject.memberIds) }}</dd></div>
+      <div class="details-description"><dt>Description</dt><dd>{{ currentProject.description || 'No description provided.' }}</dd></div>
+    </dl>
+  </section>
+}

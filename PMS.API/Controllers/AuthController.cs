@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
         return Ok(new { token });
     }
 
-    [Authorize]
+    //[Authorize]
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile()
     {

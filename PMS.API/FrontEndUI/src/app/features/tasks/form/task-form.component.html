@@ -1,0 +1,95 @@
+<div class="page-heading">
+  <div>
+    <h2>{{ creatingSubtask() ? 'Add subtask' : creating() ? 'Add task' : 'Edit task' }}</h2>
+    <p class="muted">{{ creatingSubtask() ? 'Add a child task under the selected parent.' : creating() ? 'Create a task and assign it to a project.' : 'Update task details and assignment.' }}</p>
+  </div>
+  @if (parentTask(); as currentParent) {
+    <a class="secondary-button" [routerLink]="['/tasks', currentParent.id, 'view']">Back to parent task</a>
+  } @else {
+    <a class="secondary-button" routerLink="/tasks">Back to tasks</a>
+  }
+</div>
+
+@if (loading()) {
+  <div class="empty-state"><span class="loader"></span><p>Loading task…</p></div>
+} @else if (pageError()) {
+  <div class="notice error-notice">
+    <strong>Could not open task form</strong>
+    <p>{{ pageError() }}</p>
+    <button class="secondary-button" type="button" (click)="retryLoad()">Try again</button>
+    <a class="secondary-button" routerLink="/tasks">Back to tasks</a>
+  </div>
+} @else {
+  <section class="task-form-card">
+    <form #taskForm="ngForm" (ngSubmit)="submit()">
+      <div class="form-grid">
+        <label class="form-full">Task title<input name="title" [(ngModel)]="form.title" required></label>
+        <label>Project
+          @if (creating() && !creatingSubtask()) {
+            <select name="projectId" [(ngModel)]="form.projectId" (ngModelChange)="onProjectChange($event)" required>
+              <option [ngValue]="null" disabled>Select a project</option>
+              @for (project of projects(); track project.id) {
+                <option [ngValue]="project.id">{{ projectDisplayName(project) }}</option>
+              }
+            </select>
+          } @else {
+            <input [value]="selectedProjectName()" readonly>
+          }
+        </label>
+        @if (creatingSubtask() && parentTask(); as currentParent) {
+          <div class="parent-task-note form-full">
+            <span>Parent task</span>
+            <strong>{{ currentParent.title }}</strong>
+            <small>Task #{{ currentParent.id }} · {{ parentProjectName() }}</small>
+          </div>
+        }
+        <label>Assignee
+            <select name="assignedTo" [(ngModel)]="form.assignedTo" [disabled]="!form.projectId || assigneesLoading() || !!assigneesError()">
+            <option [ngValue]="null">Unassigned</option>
+            @for (assignee of assignees(); track assignee.id) {
+                <option [ngValue]="assignee.id">{{ userDisplayName(assignee) }}{{ assignee.isActive ? '' : ' (Inactive)' }}</option>
+            }
+          </select>
+        </label>
+        <label>Priority
+          <select name="priority" [(ngModel)]="form.priority" required>
+            <option [ngValue]="0">Low</option>
+            <option [ngValue]="1">Medium</option>
+            <option [ngValue]="2">High</option>
+            <option [ngValue]="3">Critical</option>
+          </select>
+        </label>
+        <label>Start date<input type="date" name="startDate" [(ngModel)]="form.startDate"></label>
+        <label>Due date<input type="date" name="dueDate" [(ngModel)]="form.dueDate"></label>
+        <label class="form-full">Description<textarea name="description" [(ngModel)]="form.description" rows="3"></textarea></label>
+      </div>
+
+      @if (lookupsLoading()) { <p class="form-message" role="status">Loading projects and users…</p> }
+      @if (lookupError()) {
+        <p class="form-error" role="alert">{{ lookupError() }}</p>
+        <button type="button" class="secondary-button" (click)="loadLookups()">Retry loading projects and users</button>
+      }
+      @if (assigneesLoading()) { <p class="form-message" role="status">Loading project members…</p> }
+      @if (!assigneesLoading() && form.projectId !== null && !assigneesError() && !projectMembers().some(member => member.isActive)) {
+        <p class="form-message" role="status">This project has no active members. You can leave the task unassigned.</p>
+      }
+      @if (assigneesError()) {
+        <p class="form-error" role="alert">{{ assigneesError() }}</p>
+        @if (form.projectId !== null) {
+          <button type="button" class="secondary-button" (click)="loadProjectAssignees()">Retry loading project members</button>
+        }
+      }
+      @if (actionError()) { <p class="form-error" role="alert">{{ actionError() }}</p> }
+      <footer class="form-actions">
+        @if (parentTask(); as currentParent) {
+          <a class="secondary-button" [routerLink]="['/tasks', currentParent.id, 'view']">Cancel</a>
+        } @else {
+          <a class="secondary-button" routerLink="/tasks">Cancel</a>
+        }
+        <button type="submit" class="primary-button compact" [disabled]="taskForm.invalid || saving() || loading() || lookupsLoading() || !!lookupError() || (creating() && (assigneesLoading() || !!assigneesError())) || (creating() && !creatingSubtask() && form.projectId === null) || (creatingSubtask() && !parentTask())">
+          {{ saving() ? 'Saving…' : creatingSubtask() ? 'Create subtask' : creating() ? 'Create task' : 'Save changes' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+}

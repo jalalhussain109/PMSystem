@@ -1,0 +1,93 @@
+<div class="page-heading">
+  <div>
+    <h2>{{ creating() ? 'Add project' : 'Edit project' }}</h2>
+    <p class="muted">{{ creating() ? 'Create a project and assign its team.' : 'Update project details and team assignments.' }}</p>
+  </div>
+  <a class="secondary-button" routerLink="/projects">Back to projects</a>
+</div>
+
+@if (loading()) {
+  <div class="empty-state"><span class="loader"></span><p>Loading project…</p></div>
+} @else if (pageError()) {
+  <div class="notice error-notice">
+    <strong>Could not open project form</strong>
+    <p>{{ pageError() }}</p>
+    <a class="secondary-button" routerLink="/projects">Back to projects</a>
+  </div>
+} @else {
+  <section class="project-form-card">
+    <form #projectForm="ngForm" (ngSubmit)="submit()">
+      <div class="form-grid">
+        <label>Project code<input name="projectCode" [(ngModel)]="form.projectCode" required></label>
+        <label>Project name<input name="projectName" [(ngModel)]="form.projectName" required></label>
+        @if (project(); as currentProject) {
+          <label>Status<input [value]="currentProject.status || 'Active'" readonly></label>
+        }
+        <label>Priority
+          <select name="priority" [(ngModel)]="form.priority" required>
+            <option [ngValue]="0">Low</option>
+            <option [ngValue]="1">Medium</option>
+            <option [ngValue]="2">High</option>
+            <option [ngValue]="3">Critical</option>
+          </select>
+        </label>
+        <label>Start date<input type="date" name="startDate" [(ngModel)]="form.startDate"></label>
+        <label>End date<input type="date" name="endDate" [(ngModel)]="form.endDate"></label>
+        <label>Project manager
+          <select name="projectManagerId" [(ngModel)]="form.projectManagerId" [disabled]="usersLoading() || !!usersError()">
+            <option [ngValue]="null">Unassigned</option>
+            @for (manager of users(); track manager.id) {
+              <option [ngValue]="manager.id">{{ userDisplayName(manager) }}{{ manager.isActive ? '' : ' (Inactive)' }}</option>
+            }
+          </select>
+        </label>
+        <div class="team-members-field form-full">
+          <span class="field-label">Team members</span>
+          <div class="team-dropdown">
+            <button
+              type="button"
+              class="team-dropdown-trigger"
+              [disabled]="usersLoading() || !!usersError()"
+              [attr.aria-expanded]="dropdownOpen"
+              aria-haspopup="listbox"
+              (click)="toggleTeamDropdown()">
+              <span>{{ selectedTeamMemberLabel() }}</span>
+              <span class="dropdown-chevron" aria-hidden="true">▾</span>
+            </button>
+            @if (dropdownOpen) {
+              <div class="team-dropdown-menu" role="listbox" aria-multiselectable="true" aria-label="Select project team members">
+                @for (member of selectableTeamMembers(); track member.id) {
+                  <label class="team-member-option">
+                    <input
+                      type="checkbox"
+                      [ngModel]="form.memberIds.includes(member.id)"
+                      [ngModelOptions]="{ standalone: true }"
+                      (ngModelChange)="setTeamMember(member.id, $event)">
+                    <span>{{ userDisplayName(member) }}{{ member.isActive ? '' : ' (Inactive)' }}</span>
+                  </label>
+                } @empty {
+                  <p class="team-dropdown-empty">No users available.</p>
+                }
+              </div>
+            }
+          </div>
+          <small class="field-hint">Select one or more users to add them to the project team.</small>
+        </div>
+        <label class="form-full">Description<textarea name="description" [(ngModel)]="form.description" rows="3"></textarea></label>
+      </div>
+
+      @if (usersLoading()) { <p class="form-message" role="status">Loading users…</p> }
+      @if (usersError()) {
+        <p class="form-error" role="alert">{{ usersError() }}</p>
+        <button type="button" class="secondary-button" (click)="loadUsers()">Retry loading users</button>
+      }
+      @if (actionError()) { <p class="form-error" role="alert">{{ actionError() }}</p> }
+      <footer class="form-actions">
+        <a class="secondary-button" routerLink="/projects">Cancel</a>
+        <button type="submit" class="primary-button compact" [disabled]="projectForm.invalid || saving() || loading() || usersLoading() || !!usersError()">
+          {{ saving() ? 'Saving…' : creating() ? 'Create project' : 'Save changes' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+}

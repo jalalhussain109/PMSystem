@@ -1,0 +1,204 @@
+.project-form-card {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 26px;
+  box-shadow: 0 8px 28px #17172b0a;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 7px;
+  color: #59637a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 11px;
+  font: 400 12px 'DM Sans', sans-serif;
+}
+
+.form-grid input:focus,
+.form-grid select:focus,
+.form-grid textarea:focus {
+  border-color: var(--purple);
+  outline: 2px solid #6558d926;
+}
+
+.form-grid input[readonly] {
+  background: #f6f7fb;
+  color: #7e879b;
+}
+
+.form-grid textarea {
+  resize: vertical;
+}
+
+.form-full {
+  grid-column: 1 / -1;
+}
+
+.team-members-field {
+  display: grid;
+  gap: 7px;
+}
+
+.field-label {
+  color: #59637a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.team-dropdown {
+  position: relative;
+}
+
+.team-dropdown-trigger {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 10px 11px;
+  text-align: left;
+  font: 400 12px 'DM Sans', sans-serif;
+}
+
+.team-dropdown-trigger:focus {
+  border-color: var(--purple);
+  outline: 2px solid #6558d926;
+}
+
+.team-dropdown-trigger:disabled {
+  background: #f6f7fb;
+  color: #7e879b;
+  cursor: not-allowed;
+}
+
+.dropdown-chevron {
+  color: #7e879b;
+}
+
+.team-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  z-index: 3;
+  max-height: 210px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  padding: 5px;
+  box-shadow: 0 10px 24px #17172b1a;
+}
+
+.team-member-option {
+  display: flex !important;
+  min-height: 35px;
+  align-items: center;
+  gap: 9px !important;
+  border-radius: 5px;
+  color: #30394e !important;
+  cursor: pointer;
+  padding: 7px 8px;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+.team-member-option:hover {
+  background: #f6f7fb;
+}
+
+.team-member-option input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--purple);
+}
+
+.team-dropdown-empty {
+  margin: 0;
+  color: #7e879b;
+  padding: 9px;
+  font-size: 12px;
+}
+
+.field-hint {
+  color: #7e879b;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.form-error,
+.form-message {
+  margin: 14px 0 0;
+  font-size: 12px;
+}
+
+.form-error {
+  color: #b74747;
+}
+
+.form-message {
+  color: #7e879b;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.form-actions > a,
+.form-actions > button {
+  box-sizing: border-box;
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  padding: 9px 14px;
+}
+
+.form-actions button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+@media (max-width: 560px) {
+  .project-form-card {
+    padding: 18px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-full {
+    grid-column: auto;
+  }
+}

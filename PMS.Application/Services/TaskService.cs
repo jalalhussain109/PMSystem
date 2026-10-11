@@ -17,10 +17,93 @@ namespace PMS.Application.Services
         private readonly IProjectRepository _projectRepository;
         private readonly AutoMapper.IMapper _mapper;
 
-        public TaskService(ITaskRepository taskRepository, IProjectRepository projectRepository)
+        public TaskService(ITaskRepository taskRepository, IProjectRepository projectRepository, AutoMapper.IMapper mapper)
         {
             _taskRepository = taskRepository;
             _projectRepository = projectRepository;
+            _mapper = mapper;
+        }
+
+        public async Task<ServiceResult<PagedResult<TaskDto>>> ListAsync(int page = 1, int pageSize = 20, string? sortBy = null, string? sortDir = null, string? status = null, long? assignedTo = null, string? priority = null, DateTime? dueFrom = null, DateTime? dueTo = null, string? search = null, long? projectId = null, bool includeSubtasks = true, DateTime? startFrom = null)
+        {
+            // validate paging
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 20;
+            if (pageSize > 100) pageSize = 100;
+
+            var tasks = (await _taskRepository.GetAllAsync()).AsQueryable();
+
+            var checkList = tasks.ToList();
+
+            // filters
+            if (projectId.HasValue)
+                tasks = tasks.Where(t => t.ProjectId == projectId.Value);
+
+            if (!includeSubtasks)
+                tasks = tasks.Where(t => t.ParentTaskId == null);
+
+            if (assignedTo.HasValue)
+                tasks = tasks.Where(t => t.AssignedTo == assignedTo.Value);
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<TaskState>(status, true, out var s))
+                tasks = tasks.Where(t => t.Status == s);
+
+            if (!string.IsNullOrWhiteSpace(priority) && Enum.TryParse<Priority>(priority, true, out var p))
+                tasks = tasks.Where(t => t.Priority == p);
+
+            if (dueFrom.HasValue)
+                tasks = tasks.Where(t => t.DueDate.HasValue && t.DueDate.Value.Date >= dueFrom.Value.Date);
+
+            if (dueTo.HasValue)
+                tasks = tasks.Where(t => t.DueDate.HasValue && t.DueDate.Value.Date <= dueTo.Value.Date);
+
+            if (startFrom.HasValue)
+                tasks = tasks.Where(t => t.StartDate.HasValue && t.StartDate.Value.Date >= startFrom.Value.Date);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var q = search.Trim().ToLowerInvariant();
+                tasks = tasks.Where(t => (t.Title != null && t.Title.ToLowerInvariant().Contains(q)) || (t.Description != null && t.Description.ToLowerInvariant().Contains(q)));
+            }
+
+            // sorting
+            var sort = (sortBy ?? "createdDate").ToLowerInvariant();
+            var dir = (sortDir ?? "desc").ToLowerInvariant();
+
+            tasks = (sort, dir) switch
+            {
+                ("title", "asc") => tasks.OrderBy(t => t.Title),
+                ("title", _) => tasks.OrderByDescending(t => t.Title),
+                ("startdate", "asc") => tasks.OrderBy(t => t.StartDate),
+                ("startdate", _) => tasks.OrderByDescending(t => t.StartDate),
+                ("duedate", "asc") => tasks.OrderBy(t => t.DueDate),
+                ("duedate", _) => tasks.OrderByDescending(t => t.DueDate),
+                ("priority", "asc") => tasks.OrderBy(t => t.Priority),
+                ("priority", _) => tasks.OrderByDescending(t => t.Priority),
+                ("status", "asc") => tasks.OrderBy(t => t.Status),
+                ("status", _) => tasks.OrderByDescending(t => t.Status),
+                ("projectname", "asc") => tasks.OrderBy(t => t.Project != null ? t.Project.ProjectName : string.Empty),
+                ("projectname", _) => tasks.OrderByDescending(t => t.Project != null ? t.Project.ProjectName : string.Empty),
+                ("assigneename", "asc") => tasks.OrderBy(t => t.AssignedUser != null ? (t.AssignedUser.DisplayName ?? t.AssignedUser.UserName) : string.Empty),
+                ("assigneename", _) => tasks.OrderByDescending(t => t.AssignedUser != null ? (t.AssignedUser.DisplayName ?? t.AssignedUser.UserName) : string.Empty),
+                ("createddate", "asc") => tasks.OrderBy(t => t.CreatedDate),
+                _ => tasks.OrderByDescending(t => t.CreatedDate),
+            };
+
+            var total = tasks.LongCount();
+
+            var items = tasks.Skip((page - 1) * pageSize).Take(pageSize).ToList().Select(t => _mapper.Map<TaskDto>(t)).ToList();
+
+            var result = new PagedResult<TaskDto>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)System.Math.Ceiling(total / (double)pageSize)
+            };
+
+            return ServiceResult<PagedResult<TaskDto>>.Success(result);
         }
 
         public async Task<ServiceResult<TaskDto>> CreateAsync(long projectId, CreateTaskDto dto)

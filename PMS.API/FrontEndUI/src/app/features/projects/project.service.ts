@@ -45,8 +45,24 @@ interface ProjectResponse {
 interface ProjectListEnvelope {
   succeeded?: boolean;
   success?: boolean;
-  data?: ProjectResponse[] | null;
+  data?: ProjectResponse[] | PagedProjectResponse | null;
   errors?: string[];
+}
+
+interface PagedProjectResponse {
+  items: ProjectResponse[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface PagedProjectResult {
+  items: ProjectDto[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 const PROJECT_STATUSES = ['Draft', 'Planning', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
@@ -84,11 +100,46 @@ export class ProjectService {
     );
   }
 
+  getPaged(page: number, pageSize: number): Observable<PagedProjectResult> {
+    return this.api.get<ProjectListEnvelope>('Projects', { page, pageSize }).pipe(
+      map(result => {
+        if (result.succeeded === false || result.success === false) {
+          throw new Error(result.errors?.join(', ') || 'Unable to load projects.');
+        }
+
+        const data = result.data;
+        if (data == null || Array.isArray(data)) {
+          throw new Error('The projects response does not contain paged data.');
+        }
+        if (!Array.isArray(data.items)
+          || typeof data.totalCount !== 'number'
+          || typeof data.page !== 'number'
+          || typeof data.pageSize !== 'number'
+          || typeof data.totalPages !== 'number') {
+          throw new Error('The projects response has an unexpected paged data format.');
+        }
+
+        return {
+          ...data,
+          items: data.items.map(mapProject)
+        };
+      })
+    );
+  }
+
+  getById(id: number): Observable<ProjectDto> {
+    return this.api.get<ProjectResponse>(`Projects/${id}`).pipe(map(mapProject));
+  }
+
   create(project: CreateProjectDto): Observable<ProjectDto> {
     return this.api.post<ProjectResponse, CreateProjectDto>('Projects', project).pipe(map(mapProject));
   }
 
   update(id: number, project: UpdateProjectDto): Observable<ProjectDto> {
     return this.api.put<ProjectResponse, UpdateProjectDto>(`Projects/${id}`, project).pipe(map(mapProject));
+  }
+
+  delete(id: number): Observable<void> {
+    return this.api.delete<void>(`Projects/${id}`);
   }
 }

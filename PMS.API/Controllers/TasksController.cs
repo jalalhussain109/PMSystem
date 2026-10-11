@@ -25,6 +25,15 @@ namespace PMS.API.Controllers
             return CreatedAtAction(nameof(GetTask), new { id = created.Id }, created);
         }
 
+        [HttpGet("projects/{projectId:long}/tasks")]
+        public async Task<IActionResult> ListByProject(long projectId)
+        {
+            var result = await _taskService.ListByProjectAsync(projectId);
+            if (result.NotFound) return NotFound();
+            if (!result.Succeeded) return BadRequest(new { errors = result.Errors });
+            return Ok(result.Data);
+        }
+
         [HttpGet("tasks/{id:long}")]
         public async Task<IActionResult> GetTask(long id)
         {
@@ -33,6 +42,13 @@ namespace PMS.API.Controllers
             if (!result.Succeeded) return BadRequest(new { errors = result.Errors });
 
             return Ok(result.Data);
+        }
+
+        [HttpGet("tasks")]
+        public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? sortBy = null, [FromQuery] string? sortDir = null, [FromQuery] string? status = null, [FromQuery] long? assignedTo = null, [FromQuery] string? priority = null, [FromQuery] DateTime? dueFrom = null, [FromQuery] DateTime? dueTo = null, [FromQuery] string? search = null, [FromQuery] long? projectId = null, [FromQuery] bool includeSubtasks = true, [FromQuery] DateTime? startFrom = null)
+        {
+            var result = await _taskService.ListAsync(page, pageSize, sortBy, sortDir, status, assignedTo, priority, dueFrom, dueTo, search, projectId, includeSubtasks, startFrom);
+            return Ok(result);
         }
 
         [HttpPut("tasks/{id:long}")]

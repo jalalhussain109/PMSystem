@@ -15,6 +15,7 @@ namespace PMS.Domain.Entities
         public ProjectStatus Status { get; set; } = ProjectStatus.Draft;
         public Priority Priority { get; set; } = Priority.Medium;
         public long? ProjectManagerId { get; set; }
+        public bool IsActive { get; set; } = true;
 
         // Audit
         public long? CreatedBy { get; set; }

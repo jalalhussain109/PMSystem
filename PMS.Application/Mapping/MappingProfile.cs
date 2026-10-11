@@ -11,7 +11,11 @@ namespace PMS.Application.Mapping
         {
             // Project -> ProjectDto mapping is handled in service due to members being managed via repository
             CreateMap<TaskItem, TaskDto>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+                // map constructor params for positional record TaskDto
+                .ForCtorParam("Status", opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForCtorParam("ProjectName", opt => opt.MapFrom(src => src.Project != null ? src.Project.ProjectName : null))
+                .ForCtorParam("AssigneeName", opt => opt.MapFrom(src => src.AssignedUser != null ? (src.AssignedUser.DisplayName ?? src.AssignedUser.UserName) : null));
+            
             CreateMap<ApplicationUser, UserDto>();
             CreateMap<ProjectMember, ProjectMemberDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.UserName : string.Empty));
