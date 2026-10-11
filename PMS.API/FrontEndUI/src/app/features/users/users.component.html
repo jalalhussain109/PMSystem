@@ -2,6 +2,110 @@
   <div>
     <span class="eyebrow">ADMINISTRATION</span>
     <h2>Users &amp; access</h2>
-    <p class="muted">Manage access through your ASP.NET Core Identity API.</p>
+    <p class="muted">View user profiles and manage account details and access.</p>
   </div>
+  <button class="primary-button compact" type="button" (click)="reload()" [disabled]="loading()">↻ Refresh</button>
 </div>
+
+@if (loading()) {
+  <div class="empty-state">
+    <span class="loader"></span>
+    <p>Loading users…</p>
+  </div>
+}
+@else if (error()) {
+  <div class="notice error-notice">
+    <strong>Could not load users</strong>
+    <p>{{ error() }}</p>
+    <small>Confirm that GET /api/Users is available and the account has permission to view users.</small>
+    <button class="secondary-button" type="button" (click)="reload()">Try again</button>
+  </div>
+}
+@else if (users().length === 0) {
+  <div class="empty-state"><p>No users found.</p></div>
+}
+@else {
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>USER</th>
+          <th>EMAIL</th>
+          <th>PHONE</th>
+          <th>STATUS</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr>
+            <td>
+              <strong>{{ user.displayName || user.userName || 'Unnamed user' }}</strong>
+              <small class="table-id">{{ user.userName || '—' }}</small>
+            </td>
+            <td>{{ user.email || '—' }}</td>
+            <td>{{ user.phoneNumber || '—' }}</td>
+            <td><span class="status-pill" [class.inactive-status]="!user.isActive">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td>
+            <td class="row-actions">
+              <button type="button" class="table-action" (click)="viewDetails(user)">View Details</button>
+              <button type="button" class="table-action" (click)="editDetails(user)">Edit</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (viewingUser(); as user) {
+  <div class="modal-backdrop" (click)="closeDetails()">
+    <section class="user-modal" role="dialog" aria-modal="true" aria-labelledby="user-details-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <span class="eyebrow">USER DETAILS</span>
+          <h2 id="user-details-title">{{ user.displayName || user.userName || 'User' }}</h2>
+        </div>
+        <button type="button" class="modal-close" aria-label="Close user details" (click)="closeDetails()">×</button>
+      </header>
+      <dl class="user-details">
+        <div><dt>User ID</dt><dd>{{ user.id }}</dd></div>
+        <div><dt>Username</dt><dd>{{ user.userName || '—' }}</dd></div>
+        <div><dt>Display name</dt><dd>{{ user.displayName || '—' }}</dd></div>
+        <div><dt>Email</dt><dd>{{ user.email || '—' }}</dd></div>
+        <div><dt>Phone</dt><dd>{{ user.phoneNumber || '—' }}</dd></div>
+        <div><dt>Status</dt><dd>{{ user.isActive ? 'Active' : 'Inactive' }}</dd></div>
+        <div><dt>Created</dt><dd>{{ user.createdDate | date:'medium' }}</dd></div>
+        <div><dt>Last modified</dt><dd>{{ user.modifiedDate ? (user.modifiedDate | date:'medium') : '—' }}</dd></div>
+      </dl>
+    </section>
+  </div>
+}
+
+@if (editingUser(); as user) {
+  <div class="modal-backdrop" (click)="closeEdit()">
+    <section class="user-modal" role="dialog" aria-modal="true" aria-labelledby="edit-user-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <span class="eyebrow">USER SETTINGS</span>
+          <h2 id="edit-user-title">Edit user</h2>
+        </div>
+        <button type="button" class="modal-close" aria-label="Close edit user" [disabled]="saving()" (click)="closeEdit()">×</button>
+      </header>
+      <form #userForm="ngForm" (ngSubmit)="saveUser()">
+        <div class="form-grid">
+          <label>Username<input name="userName" [(ngModel)]="editForm.userName" required></label>
+          <label>Display name<input name="displayName" [(ngModel)]="editForm.displayName"></label>
+          <label>Email<input type="email" name="email" [(ngModel)]="editForm.email" email></label>
+          <label>Phone<input type="tel" name="phoneNumber" [(ngModel)]="editForm.phoneNumber"></label>
+          <label class="active-toggle"><input type="checkbox" name="isActive" [(ngModel)]="editForm.isActive"> Active account</label>
+          <label><span>User ID</span><input [value]="user.id" readonly></label>
+        </div>
+        @if (actionError()) { <p class="form-error" role="alert">{{ actionError() }}</p> }
+        <footer class="modal-actions">
+          <button type="button" class="secondary-button" [disabled]="saving()" (click)="closeEdit()">Cancel</button>
+          <button type="submit" class="primary-button compact" [disabled]="userForm.invalid || saving()">{{ saving() ? 'Saving…' : 'Save changes' }}</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}

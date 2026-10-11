@@ -3,6 +3,7 @@
     <h2>Projects</h2>
     <p class="muted">View and organize projects in your workspace.</p>
   </div>
+  <button class="primary-button compact" type="button" (click)="addProject()">+ Add project</button>
   <button class="primary-button compact" type="button" (click)="reload()">↻ Refresh</button>
 </div>
 @if (loading()) { 
@@ -20,9 +21,7 @@
   </div> 
 }
 @else {
-  @if (showingSampleData()) { 
-    <p class="sample-data-note">Showing sample projects because the API returned no projects.</p> 
-  }
+
   <div class="table-wrap">
     <table>
       <thead>
@@ -69,6 +68,7 @@
         <div><dt>Project code</dt><dd>{{ project.projectCode || '—' }}</dd></div>
         <div><dt>Status</dt><dd>{{ project.status || 'Active' }}</dd></div>
         <div><dt>Priority</dt><dd>{{ project.priority === undefined ? '—' : ['Low', 'Medium', 'High', 'Critical'][project.priority] || project.priority }}</dd></div>
+        <div><dt>Project manager</dt><dd>{{ getProjectManagerName(project.projectManagerId) }}</dd></div>
         <div><dt>Start date</dt><dd>{{ project.startDate ? (project.startDate | date:'mediumDate') : '—' }}</dd></div>
         <div><dt>End date</dt><dd>{{ project.endDate ? (project.endDate | date:'mediumDate') : '—' }}</dd></div>
         <div class="details-description"><dt>Description</dt><dd>{{ project.description || 'No description provided.' }}</dd></div>
@@ -77,13 +77,13 @@
   </div>
 }
 
-@if (editingProject(); as project) {
+@if (editingProject() || creatingProject()) {
   <div class="modal-backdrop" (click)="closeEdit()">
     <section class="project-modal" role="dialog" aria-modal="true" aria-labelledby="edit-project-title" (click)="$event.stopPropagation()">
       <header class="modal-header">
         <div>
           <span class="eyebrow">PROJECT SETTINGS</span>
-          <h2 id="edit-project-title">Edit project</h2>
+          <h2 id="edit-project-title">{{ creatingProject() ? 'Create project' : 'Edit project' }}</h2>
         </div>
         <button type="button" class="modal-close" aria-label="Close edit project" [disabled]="saving()" (click)="closeEdit()">×</button>
       </header>
@@ -91,7 +91,9 @@
         <div class="form-grid">
           <label>Project code<input name="projectCode" [(ngModel)]="editForm.projectCode" required></label>
           <label>Project name<input name="projectName" [(ngModel)]="editForm.projectName" required></label>
-          <label>Status<input [value]="project.status || 'Active'" readonly></label>
+          @if (editingProject(); as project) {
+            <label>Status<input [value]="project.status || 'Active'" readonly></label>
+          }
           <label>Priority
             <select name="priority" [(ngModel)]="editForm.priority" required>
               <option [ngValue]="0">Low</option>
@@ -102,12 +104,25 @@
           </label>
           <label>Start date<input type="date" name="startDate" [(ngModel)]="editForm.startDate"></label>
           <label>End date<input type="date" name="endDate" [(ngModel)]="editForm.endDate"></label>
+          <label>Project manager
+            <select name="projectManagerId" [(ngModel)]="editForm.projectManagerId" [disabled]="managersLoading() || !!managersError()">
+              <option [ngValue]="null">Unassigned</option>
+              @for (manager of projectManagers(); track manager.id) {
+                <option [ngValue]="manager.id">{{ userDisplayName(manager) }}{{ manager.isActive ? '' : ' (Inactive)' }}</option>
+              }
+            </select>
+          </label>
           <label class="form-full">Description<textarea name="description" [(ngModel)]="editForm.description" rows="3"></textarea></label>
         </div>
+        @if (managersLoading()) { <p class="form-error" role="status">Loading users…</p> }
+        @if (managersError()) {
+          <p class="form-error" role="alert">{{ managersError() }}</p>
+          <button type="button" class="secondary-button" (click)="loadProjectManagers()">Retry loading users</button>
+        }
         @if (actionError()) { <p class="form-error" role="alert">{{ actionError() }}</p> }
         <footer class="modal-actions">
           <button type="button" class="secondary-button" [disabled]="saving()" (click)="closeEdit()">Cancel</button>
-          <button type="submit" class="primary-button compact" [disabled]="projectForm.invalid || saving()">{{ saving() ? 'Saving…' : 'Save changes' }}</button>
+          <button type="submit" class="primary-button compact" [disabled]="projectForm.invalid || saving() || managersLoading() || !!managersError()">{{ saving() ? 'Saving…' : creatingProject() ? 'Create project' : 'Save changes' }}</button>
         </footer>
       </form>
     </section>

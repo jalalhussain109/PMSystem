@@ -14,7 +14,7 @@ export interface ProjectDto {
   projectManagerId?: number | null;
 }
 
-export interface UpdateProjectDto {
+export interface CreateProjectDto {
   projectCode: string;
   projectName: string;
   description: string | null;
@@ -23,6 +23,8 @@ export interface UpdateProjectDto {
   priority: number;
   projectManagerId: number | null;
 }
+
+export type UpdateProjectDto = CreateProjectDto;
 
 interface ProjectResponse {
   id: number;
@@ -57,6 +59,7 @@ function mapProject(project: ProjectResponse): ProjectDto {
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
   private readonly api = inject(ApiClientService);
+
   getAll(): Observable<ProjectDto[]> {
     return this.api.get<ProjectResponse[] | ProjectListEnvelope | null>('Projects').pipe(
       map(result => {
@@ -76,6 +79,10 @@ export class ProjectService {
         throw new Error('The projects response has an unexpected format.');
       })
     );
+  }
+
+  create(project: CreateProjectDto): Observable<ProjectDto> {
+    return this.api.post<ProjectResponse, CreateProjectDto>('Projects', project).pipe(map(mapProject));
   }
 
   update(id: number, project: UpdateProjectDto): Observable<ProjectDto> {
