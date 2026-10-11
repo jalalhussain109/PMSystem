@@ -6,9 +6,10 @@
       <a routerLink="/dashboard" routerLinkActive="active"><span>▦</span> Dashboard</a>
       <a routerLink="/projects" routerLinkActive="active"><span>◫</span> Projects</a>
       <a routerLink="/tasks" routerLinkActive="active"><span>✓</span> My Tasks</a>
-      @if (auth.hasAnyRole(['Admin'])) {
+      <a routerLink="/users" routerLinkActive="active"><span>♙</span> Users</a>
+      <!-- @if (auth.hasAnyRole(['Admin'])) {
         <a routerLink="/users" routerLinkActive="active"><span>♙</span> Users</a>
-      }
+      } -->
     </nav>
     <div class="sidebar-bottom"><span class="avatar">PM</span><div class="profile"><strong>Signed in</strong><small>PMS account</small></div><button class="icon-button" title="Sign out" (click)="auth.logout()">↗</button></div>
   </aside>

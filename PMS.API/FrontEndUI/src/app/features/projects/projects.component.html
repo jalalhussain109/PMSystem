@@ -4,7 +4,6 @@
     <p class="muted">View and organize projects in your workspace.</p>
   </div>
   <button class="primary-button compact" type="button" (click)="addProject()">+ Add project</button>
-  <button class="primary-button compact" type="button" (click)="reload()">↻ Refresh</button>
 </div>
 @if (loading()) { 
   <div class="empty-state">
@@ -44,8 +43,12 @@
             <td><span class="status-pill">{{ project.status || 'Active' }}</span></td>
             <td>{{ project.endDate ? (project.endDate | date:'mediumDate') : '—' }}</td>
             <td class="row-actions">
-              <button type="button" class="table-action" (click)="viewDetails(project)">View Details</button>
-              <button type="button" class="table-action" (click)="editDetails(project)">Edit</button>
+              <button type="button" class="table-action icon-action" (click)="viewDetails(project)" aria-label="View project details" title="View details">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <button type="button" class="table-action icon-action" (click)="editDetails(project)" aria-label="Edit project" title="Edit">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"></path></svg>
+              </button>
             </td>
           </tr> 
         }

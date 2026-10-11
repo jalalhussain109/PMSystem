@@ -3,7 +3,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { UpdateUserDto, UserDto, UserService } from './user.service';
+import { CreateUserDto, UpdateUserDto, UserDto, UserService } from './user.service';
+
+interface UserForm extends UpdateUserDto {
+  password: string;
+}
 
 @Component({
   selector: 'app-users',
@@ -22,7 +26,8 @@ export class UsersComponent {
   readonly actionError = signal('');
   readonly viewingUser = signal<UserDto | null>(null);
   readonly editingUser = signal<UserDto | null>(null);
-  editForm: UpdateUserDto = this.emptyEditForm();
+  readonly creatingUser = signal(false);
+  editForm: UserForm = this.emptyEditForm();
 
   constructor() {
     this.reload();
@@ -51,46 +56,78 @@ export class UsersComponent {
 
   editDetails(user: UserDto): void {
     this.actionError.set('');
+    this.creatingUser.set(false);
     this.editForm = {
       userName: user.userName ?? '',
       displayName: user.displayName ?? '',
       email: user.email ?? '',
       phoneNumber: user.phoneNumber ?? '',
-      isActive: user.isActive
+      isActive: user.isActive,
+      password: ''
     };
     this.editingUser.set(user);
   }
 
+  addUser(): void {
+    this.actionError.set('');
+    this.editingUser.set(null);
+    this.editForm = this.emptyEditForm();
+    this.creatingUser.set(true);
+  }
+
   closeEdit(): void {
-    if (!this.saving()) this.editingUser.set(null);
+    if (!this.saving()) {
+      this.editingUser.set(null);
+      this.creatingUser.set(false);
+    }
   }
 
   saveUser(): void {
     const user = this.editingUser();
-    if (!user || this.saving()) return;
+    const isCreating = this.creatingUser();
+    if ((!user && !isCreating) || this.saving()) return;
 
     this.saving.set(true);
     this.actionError.set('');
-    this.service.update(user.id, this.editForm).pipe(finalize(() => this.saving.set(false))).subscribe({
-      next: updatedUser => {
-        this.users.update(users => users.map(item => item.id === updatedUser.id ? updatedUser : item));
+    const request = user
+      ? this.service.update(user.id, this.editForm)
+      : this.service.create(this.toCreateUserDto(this.editForm));
+    request.pipe(finalize(() => this.saving.set(false))).subscribe({
+      next: savedUser => {
+        if (user) {
+          this.users.update(users => users.map(item => item.id === savedUser.id ? savedUser : item));
+        } else {
+          this.users.update(users => [savedUser, ...users]);
+        }
         this.editingUser.set(null);
+        this.creatingUser.set(false);
       },
       error: (err: HttpErrorResponse) => this.actionError.set(err.status === 401
         ? 'Your session may have expired. Please sign in again.'
         : err.status === 403
-          ? 'Your account does not have permission to edit users.'
-          : 'Could not save the user. Check the details and try again.')
+          ? `Your account does not have permission to ${isCreating ? 'create' : 'edit'} users.`
+          : `Could not ${isCreating ? 'create' : 'save'} the user. Check the details and try again.`)
     });
   }
 
-  private emptyEditForm(): UpdateUserDto {
+  private emptyEditForm(): UserForm {
     return {
       userName: '',
       displayName: '',
       email: '',
       phoneNumber: '',
-      isActive: true
+      isActive: true,
+      password: ''
+    };
+  }
+
+  private toCreateUserDto(form: UserForm): CreateUserDto {
+    return {
+      userName: form.userName,
+      displayName: form.displayName,
+      email: form.email,
+      phoneNumber: form.phoneNumber,
+      password: form.password
     };
   }
 }

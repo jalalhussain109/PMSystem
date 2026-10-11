@@ -1,7 +1,63 @@
-<div class="page-heading"><div><span class="eyebrow">EXECUTION</span><h2>My tasks</h2><p class="muted">Keep track of the next actions and deadlines.</p></div><button class="primary-button compact" (click)="reload()">↻ Refresh</button></div>
+<div class="page-heading"><div><span class="eyebrow">EXECUTION</span><h2>My tasks</h2><p class="muted">Keep track of the next actions and deadlines.</p></div><button class="primary-button compact" type="button" (click)="addTask()">+ Add Task</button></div>
 @if (loading()) { <div class="empty-state"><span class="loader"></span><p>Loading tasks…</p></div> }
 @else if (error()) { <div class="notice error-notice"><strong>Could not load tasks</strong><p>{{ error() }}</p><small>Confirm that GET /api/Tasks is available and the account has Tasks.View permission.</small><button class="secondary-button" (click)="reload()">Try again</button></div> }
 @else {
   @if (showingSampleData()) { <p class="sample-data-note">Showing sample tasks because the API returned no tasks.</p> }
   <div class="table-wrap"><table><thead><tr><th>TASK</th><th>PROJECT</th><th>STATUS</th><th>DUE DATE</th></tr></thead><tbody>@for (task of tasks(); track task.id) { <tr><td><strong>{{ task.title }}</strong><small class="table-id">Task #{{ task.id }}</small></td><td>{{ task.projectName || '—' }}</td><td><span class="status-pill">{{ task.status || 'Open' }}</span></td><td>{{ task.dueDate ? (task.dueDate | date:'mediumDate') : '—' }}</td></tr> }</tbody></table></div>
+}
+
+@if (creatingTask()) {
+  <div class="modal-backdrop" (click)="closeCreateTask()">
+    <section class="task-modal" role="dialog" aria-modal="true" aria-labelledby="create-task-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <span class="eyebrow">TASK SETTINGS</span>
+          <h2 id="create-task-title">Add task</h2>
+        </div>
+        <button type="button" class="modal-close" aria-label="Close add task" [disabled]="saving()" (click)="closeCreateTask()">×</button>
+      </header>
+      <form #taskNgForm="ngForm" (ngSubmit)="saveTask()">
+        <div class="form-grid">
+          <label class="form-full">Task title<input name="title" [(ngModel)]="taskForm.title" required></label>
+          <label>Project
+            <select name="projectId" [(ngModel)]="taskForm.projectId" required>
+              <option [ngValue]="null" disabled>Select a project</option>
+              @for (project of projects(); track project.id) {
+                <option [ngValue]="project.id">{{ projectDisplayName(project) }}</option>
+              }
+            </select>
+          </label>
+          <label>Assignee
+            <select name="assignedTo" [(ngModel)]="taskForm.assignedTo">
+              <option [ngValue]="null">Unassigned</option>
+              @for (assignee of assignees(); track assignee.id) {
+                <option [ngValue]="assignee.id">{{ userDisplayName(assignee) }}</option>
+              }
+            </select>
+          </label>
+          <label>Priority
+            <select name="priority" [(ngModel)]="taskForm.priority" required>
+              <option [ngValue]="0">Low</option>
+              <option [ngValue]="1">Medium</option>
+              <option [ngValue]="2">High</option>
+              <option [ngValue]="3">Critical</option>
+            </select>
+          </label>
+          <label>Start date<input type="date" name="startDate" [(ngModel)]="taskForm.startDate"></label>
+          <label>Due date<input type="date" name="dueDate" [(ngModel)]="taskForm.dueDate"></label>
+          <label class="form-full">Description<textarea name="description" [(ngModel)]="taskForm.description" rows="3"></textarea></label>
+        </div>
+        @if (lookupsLoading()) { <p class="form-message" role="status">Loading projects and users…</p> }
+        @if (lookupError()) {
+          <p class="form-error" role="alert">{{ lookupError() }}</p>
+          <button type="button" class="secondary-button" (click)="loadTaskLookups()">Retry loading projects and users</button>
+        }
+        @if (actionError()) { <p class="form-error" role="alert">{{ actionError() }}</p> }
+        <footer class="modal-actions">
+          <button type="button" class="secondary-button" [disabled]="saving()" (click)="closeCreateTask()">Cancel</button>
+          <button type="submit" class="primary-button compact" [disabled]="taskNgForm.invalid || saving() || lookupsLoading() || !!lookupError()">{{ saving() ? 'Saving…' : 'Add Task' }}</button>
+        </footer>
+      </form>
+    </section>
+  </div>
 }

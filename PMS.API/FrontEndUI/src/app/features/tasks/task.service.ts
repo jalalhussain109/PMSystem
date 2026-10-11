@@ -3,12 +3,26 @@ import { Observable, map } from 'rxjs';
 import { ServiceResult } from '../../shared/models/api-response';
 import { ApiClientService } from '../../shared/services/api-client.service';
 
+export interface CreateTaskDto {
+  title: string;
+  description: string | null;
+  assignedTo: number | null;
+  priority: number;
+  startDate: string | null;
+  dueDate: string | null;
+}
+
 export interface TaskDto {
   id: number;
   title: string;
   status?: string;
   dueDate?: string | null;
   projectName?: string | null;
+  projectId?: number;
+  description?: string | null;
+  assignedTo?: number | null;
+  priority?: number;
+  startDate?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -21,5 +35,9 @@ export class TaskService {
         return result.data ?? [];
       })
     );
+  }
+
+  create(projectId: number, task: CreateTaskDto): Observable<TaskDto> {
+    return this.api.post<TaskDto, CreateTaskDto>(`projects/${projectId}/tasks`, task);
   }
 }

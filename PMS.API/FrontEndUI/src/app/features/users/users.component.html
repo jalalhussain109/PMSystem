@@ -4,7 +4,7 @@
     <h2>Users &amp; access</h2>
     <p class="muted">View user profiles and manage account details and access.</p>
   </div>
-  <button class="primary-button compact" type="button" (click)="reload()" [disabled]="loading()">↻ Refresh</button>
+  <button class="primary-button compact" type="button" (click)="addUser()">+ Add User</button>
 </div>
 
 @if (loading()) {
@@ -47,8 +47,12 @@
             <td>{{ user.phoneNumber || '—' }}</td>
             <td><span class="status-pill" [class.inactive-status]="!user.isActive">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td>
             <td class="row-actions">
-              <button type="button" class="table-action" (click)="viewDetails(user)">View Details</button>
-              <button type="button" class="table-action" (click)="editDetails(user)">Edit</button>
+              <button type="button" class="table-action icon-action" (click)="viewDetails(user)" aria-label="View user details" title="View details">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <button type="button" class="table-action icon-action" (click)="editDetails(user)" aria-label="Edit user" title="Edit">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"></path></svg>
+              </button>
             </td>
           </tr>
         }
@@ -81,13 +85,13 @@
   </div>
 }
 
-@if (editingUser(); as user) {
+@if (editingUser() || creatingUser()) {
   <div class="modal-backdrop" (click)="closeEdit()">
     <section class="user-modal" role="dialog" aria-modal="true" aria-labelledby="edit-user-title" (click)="$event.stopPropagation()">
       <header class="modal-header">
         <div>
           <span class="eyebrow">USER SETTINGS</span>
-          <h2 id="edit-user-title">Edit user</h2>
+          <h2 id="edit-user-title">{{ creatingUser() ? 'Add user' : 'Edit user' }}</h2>
         </div>
         <button type="button" class="modal-close" aria-label="Close edit user" [disabled]="saving()" (click)="closeEdit()">×</button>
       </header>
@@ -97,13 +101,19 @@
           <label>Display name<input name="displayName" [(ngModel)]="editForm.displayName"></label>
           <label>Email<input type="email" name="email" [(ngModel)]="editForm.email" email></label>
           <label>Phone<input type="tel" name="phoneNumber" [(ngModel)]="editForm.phoneNumber"></label>
-          <label class="active-toggle"><input type="checkbox" name="isActive" [(ngModel)]="editForm.isActive"> Active account</label>
-          <label><span>User ID</span><input [value]="user.id" readonly></label>
+          @if (creatingUser()) {
+            <label>Password<input type="password" name="password" [(ngModel)]="editForm.password" required minlength="6"></label>
+          } @else {
+            <label class="active-toggle"><input type="checkbox" name="isActive" [(ngModel)]="editForm.isActive"> Active account</label>
+            @if (editingUser(); as user) {
+              <label><span>User ID</span><input [value]="user.id" readonly></label>
+            }
+          }
         </div>
         @if (actionError()) { <p class="form-error" role="alert">{{ actionError() }}</p> }
         <footer class="modal-actions">
           <button type="button" class="secondary-button" [disabled]="saving()" (click)="closeEdit()">Cancel</button>
-          <button type="submit" class="primary-button compact" [disabled]="userForm.invalid || saving()">{{ saving() ? 'Saving…' : 'Save changes' }}</button>
+          <button type="submit" class="primary-button compact" [disabled]="userForm.invalid || saving()">{{ saving() ? 'Saving…' : creatingUser() ? 'Add User' : 'Save changes' }}</button>
         </footer>
       </form>
     </section>
