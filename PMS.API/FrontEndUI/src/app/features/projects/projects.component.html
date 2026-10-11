@@ -72,6 +72,7 @@
         <div><dt>Status</dt><dd>{{ project.status || 'Active' }}</dd></div>
         <div><dt>Priority</dt><dd>{{ project.priority === undefined ? '—' : ['Low', 'Medium', 'High', 'Critical'][project.priority] || project.priority }}</dd></div>
         <div><dt>Project manager</dt><dd>{{ getProjectManagerName(project.projectManagerId) }}</dd></div>
+        <div class="details-description"><dt>Team members</dt><dd>{{ getProjectMemberNames(project.memberIds) }}</dd></div>
         <div><dt>Start date</dt><dd>{{ project.startDate ? (project.startDate | date:'mediumDate') : '—' }}</dd></div>
         <div><dt>End date</dt><dd>{{ project.endDate ? (project.endDate | date:'mediumDate') : '—' }}</dd></div>
         <div class="details-description"><dt>Description</dt><dd>{{ project.description || 'No description provided.' }}</dd></div>
@@ -115,6 +116,38 @@
               }
             </select>
           </label>
+          <div class="team-members-field form-full">
+            <span class="field-label">Team members</span>
+            <div class="team-dropdown">
+              <button
+                type="button"
+                class="team-dropdown-trigger"
+                [disabled]="managersLoading() || !!managersError()"
+                [attr.aria-expanded]="teamDropdownOpen()"
+                aria-haspopup="listbox"
+                (click)="toggleTeamDropdown()">
+                <span>{{ selectedTeamMemberLabel() }}</span>
+                <span class="dropdown-chevron" aria-hidden="true">▾</span>
+              </button>
+              @if (teamDropdownOpen()) {
+                <div class="team-dropdown-menu" role="listbox" aria-multiselectable="true" aria-label="Select project team members">
+                  @for (member of selectableTeamMembers(); track member.id) {
+                    <label class="team-member-option">
+                      <input
+                        type="checkbox"
+                        [ngModel]="editForm.memberIds.includes(member.id)"
+                        [ngModelOptions]="{ standalone: true }"
+                        (ngModelChange)="setTeamMember(member.id, $event)">
+                      <span>{{ userDisplayName(member) }}{{ member.isActive ? '' : ' (Inactive)' }}</span>
+                    </label>
+                  } @empty {
+                    <p class="team-dropdown-empty">No users available.</p>
+                  }
+                </div>
+              }
+            </div>
+            <small class="field-hint">Select one or more users to add them to the project team.</small>
+          </div>
           <label class="form-full">Description<textarea name="description" [(ngModel)]="editForm.description" rows="3"></textarea></label>
         </div>
         @if (managersLoading()) { <p class="form-error" role="status">Loading users…</p> }

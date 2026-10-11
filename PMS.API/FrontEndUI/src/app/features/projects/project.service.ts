@@ -12,6 +12,7 @@ export interface ProjectDto {
   endDate?: string | null;
   priority?: number;
   projectManagerId?: number | null;
+  memberIds?: number[];
 }
 
 export interface CreateProjectDto {
@@ -22,6 +23,7 @@ export interface CreateProjectDto {
   endDate: string | null;
   priority: number;
   projectManagerId: number | null;
+  memberIds: number[];
 }
 
 export type UpdateProjectDto = CreateProjectDto;
@@ -37,6 +39,7 @@ interface ProjectResponse {
   endDate?: string | null;
   priority?: number;
   projectManagerId?: number | null;
+  memberIds?: number[];
 }
 
 interface ProjectListEnvelope {

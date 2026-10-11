@@ -19,6 +19,7 @@ namespace PMS.Infrastructure
 
             services.AddScoped<IProjectRepository, ProjectRepository>();
             services.AddScoped<ITaskRepository, TaskRepository>();
+            services.AddScoped<PMS.Domain.Interfaces.IProjectMemberRepository, PMS.Infrastructure.Repositories.ProjectMemberRepository>();
             // Identity
            
             // Register open-generic repository mapping

@@ -49,6 +49,11 @@ public class IdentityUserRepository : IIdentityUserRepository
         return await _userManager.CheckPasswordAsync(user, password);
     }
 
+    public async Task<IdentityResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword)
+    {
+        return await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+    }
+
     public async Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user)
     {
         return await _userManager.GeneratePasswordResetTokenAsync(user);

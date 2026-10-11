@@ -22,8 +22,5 @@ namespace PMS.Domain.Entities
         public long? ModifiedBy { get; set; }
         public DateTime? ModifiedDate { get; set; }
 
-        // Navigation
-        public virtual ICollection<ProjectMember> Members { get; set; } = new List<ProjectMember>();
-        public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     }
 }

@@ -27,14 +27,24 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRo
 
         modelBuilder.Entity<ProjectMember>(entity =>
         {
-            entity.HasOne(pm => pm.User)
-                .WithMany(u => u.ProjectMemberships)
-                .HasForeignKey(pm => pm.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
+            entity.HasKey(x => x.Id);
 
-        modelBuilder.Entity<ProjectMember>()
-            .HasIndex(pm => new { pm.ProjectId, pm.UserId })
-            .IsUnique();
+            entity.Property(x => x.Role)
+                  .IsRequired()
+                  .HasMaxLength(100);
+
+            entity.HasOne(x => x.Project)
+                  .WithMany()
+                  .HasForeignKey(x => x.ProjectId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.User)
+                  .WithMany()
+                  .HasForeignKey(x => x.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new { x.ProjectId, x.UserId })
+                  .IsUnique();
+        });
     }
 }

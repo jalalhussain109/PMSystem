@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PMS.Application.DTOs;
 using PMS.Application.Interfaces;
 using PMS.Domain.Interfaces;
+using System.Security.Claims;
 
 namespace PMS.API.Controllers;
 
@@ -36,6 +37,52 @@ public class AuthController : ControllerBase
         }
 
         return Ok(new { token });
+    }
+
+    [Authorize]
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        if (!long.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            return Unauthorized();
+
+        return Ok(new UserDto(
+            user.Id,
+            user.UserName,
+            user.DisplayName,
+            user.Email,
+            user.PhoneNumber,
+            user.IsActive,
+            user.CreatedDate,
+            user.CreatedBy,
+            user.ModifiedDate,
+            user.ModifiedBy));
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        if (!long.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            return Unauthorized();
+
+        var result = await _userRepository.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+        if (!result.Succeeded)
+            return BadRequest(new { errors = result.Errors.Select(error => error.Description) });
+
+        return Ok(new { message = "Password changed successfully." });
     }
 
     [HttpPost("forgot-password")]

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { ApiClientService } from '../../shared/services/api-client.service';
-import { LoginRequest, LoginResponse } from '../../shared/models/user.model';
+import { AuthProfile, ChangePasswordRequest, LoginRequest, LoginResponse } from '../../shared/models/user.model';
 
 const TOKEN_KEY = 'pms_access_token';
 
@@ -15,6 +15,14 @@ export class AuthService {
     return this.api.post<LoginResponse, LoginRequest>('Auth/login', request).pipe(
       tap(response => sessionStorage.setItem(TOKEN_KEY, response.token))
     );
+  }
+
+  getProfile(): Observable<AuthProfile> {
+    return this.api.get<AuthProfile>('Auth/profile');
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<{ message: string }> {
+    return this.api.post<{ message: string }, ChangePasswordRequest>('Auth/change-password', request);
   }
 
   getToken(): string | null {

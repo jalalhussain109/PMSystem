@@ -1,0 +1,32 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace PMS.Application.DTOs.ProjectMembers
+{
+
+    public class UpdateProjectMemberDto
+    {
+        public long ProjectId { get; set; }
+        public long UserId { get; set; }
+        public string Role { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+    }
+
+    public class CreateProjectMemberDto
+    {
+        public long ProjectId { get; set; }
+        public long UserId { get; set; }
+        public string Role { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+    public class ProjectMemberDto
+    {
+        public long Id { get; set; }
+        public long ProjectId { get; set; }
+        public long UserId { get; set; }
+        public string Role { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public string? UserName { get; set; }
+    }
+}

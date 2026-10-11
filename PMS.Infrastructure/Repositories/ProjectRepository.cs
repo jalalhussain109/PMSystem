@@ -18,32 +18,34 @@ namespace PMS.Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<Project> AddAsync(Project project)
+        public new async Task<Project> AddAsync(Project project)
         {
             project.CreatedDate = DateTime.Now;
             return await base.AddAsync(project);
         }
 
-        public async Task<bool> DeleteAsync(long id)
+        public new async Task<bool> DeleteAsync(long id)
         {
             return await base.DeleteAsync(id);
         }
 
-        public async Task<Project?> GetByIdAsync(long id)
+        public new async Task<Project?> GetByIdAsync(long id)
         {
-            return await base.GetByIdAsync(id);
+            return await _dbContext.Projects
+                .FirstOrDefaultAsync(project => project.Id == id);
         }
 
-        public async Task<IEnumerable<Project>> GetAllAsync()
+        public new async Task<IEnumerable<Project>> GetAllAsync()
         {
-            return await base.GetAllAsync();
+            return await _dbContext.Projects
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public async Task<Project> UpdateAsync(Project project)
+        public new async Task<Project> UpdateAsync(Project project)
         {
             project.ModifiedDate = DateTime.Now;
             return await base.UpdateAsync(project);
         }
     }
 }
-

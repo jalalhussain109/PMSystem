@@ -299,6 +299,9 @@ namespace PMS.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<long?>("ApplicationUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint");
 
@@ -317,14 +320,22 @@ namespace PMS.Infrastructure.Migrations
                     b.Property<long>("ProjectId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("ProjectId1")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("ProjectId1");
 
                     b.HasIndex("UserId");
 
@@ -443,14 +454,22 @@ namespace PMS.Infrastructure.Migrations
 
             modelBuilder.Entity("PMS.Domain.Entities.ProjectMember", b =>
                 {
+                    b.HasOne("PMS.Domain.Entities.ApplicationUser", null)
+                        .WithMany("ProjectMemberships")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("PMS.Domain.Entities.Project", "Project")
-                        .WithMany("Members")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PMS.Domain.Entities.Project", null)
+                        .WithMany("Members")
+                        .HasForeignKey("ProjectId1");
+
                     b.HasOne("PMS.Domain.Entities.ApplicationUser", "User")
-                        .WithMany("ProjectMemberships")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();

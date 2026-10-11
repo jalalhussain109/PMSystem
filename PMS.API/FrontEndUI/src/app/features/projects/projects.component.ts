@@ -35,6 +35,7 @@ export class ProjectsComponent {
   readonly viewingProject = signal<ProjectDto | null>(null);
   readonly editingProject = signal<ProjectDto | null>(null);
   readonly creatingProject = signal(false);
+  readonly teamDropdownOpen = signal(false);
   editForm: CreateProjectDto = this.emptyProjectForm();
 
   constructor() {
@@ -83,12 +84,48 @@ export class ProjectsComponent {
     return manager ? this.userDisplayName(manager) : `User #${projectManagerId}`;
   }
 
+  getProjectMemberNames(memberIds?: number[]): string {
+    if (!memberIds?.length) return 'No team members assigned';
+    return memberIds.map(id => {
+      const member = this.projectManagers().find(user => user.id === id);
+      return member ? this.userDisplayName(member) : `User #${id}`;
+    }).join(', ');
+  }
+
+  selectableTeamMembers(): UserDto[] {
+    const selectedIds = this.editForm.memberIds;
+    return this.projectManagers().filter(user => user.isActive || selectedIds.includes(user.id));
+  }
+
+  toggleTeamDropdown(): void {
+    if (this.managersLoading() || this.managersError()) return;
+    this.teamDropdownOpen.update(isOpen => !isOpen);
+  }
+
+  setTeamMember(userId: number, selected: boolean): void {
+    const memberIds = new Set(this.editForm.memberIds);
+    if (selected) memberIds.add(userId);
+    else memberIds.delete(userId);
+    this.editForm.memberIds = [...memberIds];
+  }
+
+  selectedTeamMemberLabel(): string {
+    const memberIds = this.editForm.memberIds;
+    if (!memberIds.length) return 'Select team members';
+    if (memberIds.length === 1) {
+      const member = this.projectManagers().find(user => user.id === memberIds[0]);
+      return member ? this.userDisplayName(member) : '1 member selected';
+    }
+    return `${memberIds.length} members selected`;
+  }
+
   userDisplayName(user: UserDto): string {
     return user.displayName?.trim() || user.userName?.trim() || user.email?.trim() || `User #${user.id}`;
   }
 
   editDetails(project: ProjectDto): void {
     this.actionError.set('');
+    this.teamDropdownOpen.set(false);
     this.creatingProject.set(false);
     this.editForm = {
       projectCode: project.projectCode ?? '',
@@ -97,13 +134,15 @@ export class ProjectsComponent {
       startDate: this.toDateInputValue(project.startDate),
       endDate: this.toDateInputValue(project.endDate),
       priority: project.priority ?? 1,
-      projectManagerId: project.projectManagerId ?? null
+      projectManagerId: project.projectManagerId ?? null,
+      memberIds: project.memberIds ?? []
     };
     this.editingProject.set(project);
   }
 
   addProject(): void {
     this.actionError.set('');
+    this.teamDropdownOpen.set(false);
     this.editingProject.set(null);
     this.editForm = this.emptyProjectForm();
     this.creatingProject.set(true);
@@ -113,6 +152,7 @@ export class ProjectsComponent {
     if (!this.saving()) {
       this.editingProject.set(null);
       this.creatingProject.set(false);
+      this.teamDropdownOpen.set(false);
     }
   }
 
@@ -129,7 +169,9 @@ export class ProjectsComponent {
         description: this.editForm.description,
         startDate: this.editForm.startDate,
         endDate: this.editForm.endDate,
-        priority: this.editForm.priority
+        priority: this.editForm.priority,
+        projectManagerId: this.editForm.projectManagerId,
+        memberIds: this.editForm.memberIds
       } : item));
       this.editingProject.set(null);
       return;
@@ -150,6 +192,7 @@ export class ProjectsComponent {
         }
         this.editingProject.set(null);
         this.creatingProject.set(false);
+        this.teamDropdownOpen.set(false);
       },
       error: (err: HttpErrorResponse) => this.actionError.set(err.status === 401 ? 'Your session may have expired. Please sign in again.' : err.status === 403 ? `Your account does not have permission to ${isCreating ? 'create' : 'edit'} projects.` : `Could not ${isCreating ? 'create' : 'save'} the project. Check the details and try again.`)
     });
@@ -163,7 +206,8 @@ export class ProjectsComponent {
       startDate: null,
       endDate: null,
       priority: 1,
-      projectManagerId: null
+      projectManagerId: null,
+      memberIds: []
     };
   }
 
