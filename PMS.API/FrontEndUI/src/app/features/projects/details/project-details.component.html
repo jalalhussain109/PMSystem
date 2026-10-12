@@ -5,6 +5,11 @@
   </div>
   <div class="heading-actions">
     @if (project(); as currentProject) {
+      @if (auth.hasAllPermissions(['Projects.AssignTeam'])) {
+        <a class="secondary-button" [routerLink]="['/projects/assign-team']" 
+          [queryParams]="{ projectId: currentProject.id }">Manage team
+        </a>
+      }
       @if (auth.hasAllPermissions(['Projects.Edit'])) {
         <a class="primary-button compact" [routerLink]="['/projects', currentProject.id, 'edit']">Edit project</a>
       }

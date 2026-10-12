@@ -1,0 +1,100 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">PROJECT TEAM</span>
+    <h2>Assign Team Members</h2>
+    <p class="muted">Choose a project and user to manage project team membership.</p>
+  </div>
+  <a class="secondary-button" routerLink="/projects">Back to projects</a>
+</div>
+
+<section class="assignment-card">
+  <div class="assignment-messages">
+    @if (actionError()) {
+      <p class="action-error" role="alert">{{ actionError() }}</p>
+    }
+    @if (actionMessage()) {
+      <p class="action-success" role="status">{{ actionMessage() }}</p>
+    }
+  </div>
+
+  @if (projectsError()) {
+    <p class="form-error" role="alert">{{ projectsError() }}</p>
+    <button class="secondary-button" type="button" (click)="loadProjects()">Retry loading projects</button>
+  } @else if (usersError()) {
+    <p class="form-error" role="alert">{{ usersError() }}</p>
+    <button class="secondary-button" type="button" (click)="loadUsers()">Retry loading users</button>
+  } @else {
+    <div class="assign-controls">
+      <label>
+        Project
+        <select
+          [ngModel]="selectedProjectId()"
+          (ngModelChange)="onProjectChange($event)"
+          name="selectedProject"
+          [disabled]="loadingProjects()">
+          <option [ngValue]="null">{{ loadingProjects() ? 'Loading projects…' : 'Select a project' }}</option>
+          @for (project of projects(); track project.id) {
+            <option [ngValue]="project.id">
+              {{ project.projectCode ? project.projectCode + ' — ' + project.name : project.name }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Team Member
+        <select
+          [ngModel]="selectedUserId()"
+          (ngModelChange)="onUserChange($event)"
+          name="selectedUser"
+          [disabled]="!selectedProjectId() || loadingUsers()">
+          <option [ngValue]="null">{{ loadingUsers() ? 'Loading users…' : 'Select a user' }}</option>
+          @for (user of users(); track user.id) {
+            <option [ngValue]="user.id">{{ userDisplayName(user.id) }}{{ user.isActive ? '' : ' (Inactive)' }}</option>
+          }
+        </select>
+      </label>
+
+      <button
+        class="primary-button compact assign-button"
+        type="button"
+        (click)="assignUser()"
+        [disabled]="selectedProjectId() === null || selectedUserId() === null || saving() || loadingMembers()">
+        {{ saving() ? 'Saving…' : 'Assign user' }}
+      </button>
+    </div>
+  }
+
+  @if (selectedProjectId() !== null && loadingMembers()) {
+    <p class="form-message" role="status">Loading project team…</p>
+  }
+
+  @if (membersError()) {
+    <p class="form-error" role="alert">{{ membersError() }}</p>
+    <button class="secondary-button" type="button" (click)="loadMembers()">Retry</button>
+  }
+
+  @if (selectedProjectId() !== null && !loadingMembers() && !membersError()) {
+    <div class="assigned-users">
+      <h3>Assigned Team Members</h3>
+      @for (member of members(); track member.id) {
+        @if (member.isActive) {
+          <span class="user-chip">
+            {{ userDisplayName(member.userId, member.userName) }}
+            <small>{{ member.role }}</small>
+            <button
+              type="button"
+              [attr.aria-label]="'Remove ' + userDisplayName(member.userId, member.userName) + ' from the project'"
+              [disabled]="saving()"
+              (click)="removeUser(member.userId)">×</button>
+          </span>
+        }
+      } @empty {
+        <p class="muted">No users are assigned to this project.</p>
+      }
+      @if (members().length && !members().some(member => member.isActive)) {
+        <p class="muted">No users are assigned to this project.</p>
+      }
+    </div>
+  }
+</section>

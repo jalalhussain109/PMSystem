@@ -4,16 +4,20 @@
     <div class="nav-label">WORKSPACE</div>
     <nav>
       <a routerLink="/dashboard" routerLinkActive="active"><span>▦</span> Dashboard</a>
-      @if (auth.hasAllPermissions(['Projects.View'])) {
-        <a routerLink="/projects" routerLinkActive="active"><span>◫</span> Projects</a>
+      @if (auth.isAdmin() || auth.hasAllPermissions(['Projects.View'])) {
+        <a routerLink="/projects" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <span>◫</span> Projects</a>
       }
-      @if (auth.hasAllPermissions(['Tasks.View'])) {
+      @if (auth.isAdmin() || auth.hasAllPermissions(['Projects.AssignTeam'])) {
+        <a routerLink="/projects/assign-team" routerLinkActive="active"><span>♧</span>Project Team</a>
+      }
+      @if (auth.isAdmin() || auth.hasAllPermissions(['Tasks.View'])) {
         <a routerLink="/tasks" routerLinkActive="active"><span>✓</span> My Tasks</a>
       }
-      @if (auth.hasAllPermissions(['Users.View'])) {
+      @if (auth.isAdmin() || auth.hasAllPermissions(['Users.View'])) {
         <a routerLink="/users" routerLinkActive="active"><span>♙</span> Users</a>
       }
-      @if (auth.hasAnyRole(['Admin'])) {
+      @if (auth.isAdmin()) {
         <a routerLink="/roles" routerLinkActive="active"><span>⚿</span> Roles & Permissions</a>
       }
     </nav>

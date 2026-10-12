@@ -118,6 +118,13 @@ export class AuthService {
     localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(permissions));
   }
 
+ isAdmin(): boolean {
+  const roles = localStorage.getItem(ROLES_KEY);
+  if (!roles) return false;
+  const userRoles: string[] = JSON.parse(roles);
+  return userRoles.some(role => role.toLowerCase() === 'admin');
+}
+
   private readAccessValues(key: string, fallback: () => string[]): string[] {
     const storedValue = localStorage.getItem(key);
     if (storedValue) {

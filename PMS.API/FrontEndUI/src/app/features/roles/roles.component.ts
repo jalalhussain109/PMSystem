@@ -7,6 +7,7 @@ import { RoleDto, RoleService } from './role.service';
 
 const AVAILABLE_PERMISSIONS = [
   'Projects.View',
+  'Projects.AssignTeam',
   'Projects.Create',
   'Projects.Edit',
   'Projects.Delete',
@@ -17,7 +18,11 @@ const AVAILABLE_PERMISSIONS = [
   'Users.View',
   'Users.Create',
   'Users.Edit',
-  'Users.Delete'
+  'Users.Delete',
+  'Roles.View',
+  'Roles.Create',
+  'Roles.Edit',
+  'Roles.Delete'
 ];
 
 @Component({

@@ -8,6 +8,7 @@ public static class PermissionConstants
     public static class Projects
     {
         public const string View = "Project.View";
+        public const string AssignTeam = "Project.AssignTeam";
         public const string Create = "Project.Create";
         public const string Edit = "Project.Edit";
         public const string Delete = "Project.Delete";

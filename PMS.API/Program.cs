@@ -13,6 +13,7 @@ using PMS.Domain.Interfaces;
 using PMS.Infrastructure;
 using PMS.Infrastructure.Data;
 using PMS.Infrastructure.Identity;
+using PMS.Domain.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -134,9 +135,10 @@ static async Task SeedRolesAsync(RoleManager<IdentityRole<long>> roleManager)
 {
     var roles = new Dictionary<string, string[]>
     {
-        { "Admin", new[] { "projects.view", "projects.create", "projects.edit", "projects.delete", "users.manage" } },
-        { "Manager", new[] { "projects.view", "projects.create", "projects.edit" } },
-        { "User", new[] { "projects.view" } }
+        { "Admin", new[] { "Projects.View", "Projects.Create", "Projects.Edit", "Projects.Delete", "Projects.AssignTeam", "Users.Manage" } },
+        { "ProjectManager", new[] { "Projects.View", "Projects.Create", "Projects.Edit", "Tasks.View","Tasks.Create","Tasks.Edit", "Projects.AssignTeam" } },
+        { "Member", new[] { "Projects.View", "Tasks.View", "Tasks.Create", "Tasks.Edit" } },
+        { "User", new[] { "Projects.View" } }
     };
 
     foreach (var kv in roles)
@@ -155,9 +157,9 @@ static async Task SeedRolesAsync(RoleManager<IdentityRole<long>> roleManager)
         var existing = await roleManager.GetClaimsAsync(role);
         foreach (var perm in permissions)
         {
-            if (!existing.Any(c => c.Type == "permission" && c.Value == perm))
+            if (!existing.Any(c => c.Type == PermissionConstants.ClaimType && c.Value == perm))
             {
-                await roleManager.AddClaimAsync(role, new System.Security.Claims.Claim("permission", perm));
+                await roleManager.AddClaimAsync(role, new System.Security.Claims.Claim(PermissionConstants.ClaimType, perm));
             }
         }
     }

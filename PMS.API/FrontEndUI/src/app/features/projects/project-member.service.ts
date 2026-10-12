@@ -18,4 +18,15 @@ export class ProjectMemberService {
   getByProject(projectId: number): Observable<ProjectMemberDto[]> {
     return this.api.get<ProjectMemberDto[]>(`ProjectMembers/project/${projectId}`);
   }
+
+  addToProject(projectId: number, userId: number, role = 'Member'): Observable<unknown> {
+    return this.api.post<unknown, { userId: number; role: string }>(
+      `Projects/${projectId}/members`,
+      { userId, role }
+    );
+  }
+
+  removeFromProject(projectId: number, userId: number): Observable<void> {
+    return this.api.delete<void>(`Projects/${projectId}/members/${userId}`);
+  }
 }
