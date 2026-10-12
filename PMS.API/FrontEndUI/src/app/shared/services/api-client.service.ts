@@ -28,6 +28,10 @@ export class ApiClientService {
     return this.http.delete<TResponse>(this.url(path));
   }
 
+  deleteWithBody<TResponse, TBody>(path: string, body: TBody): Observable<TResponse> {
+    return this.http.request<TResponse>('DELETE', this.url(path), { body });
+  }
+
   private url(path: string): string {
     return `${this.baseUrl}/${path.replace(/^\/+/, '')}`;
   }

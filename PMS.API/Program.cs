@@ -109,4 +109,55 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Seed roles and permissions
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole<long>>>();
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        // fire-and-forget seed
+        await SeedRolesAsync(roleManager);
+    }
+    catch (Exception ex)
+    {
+        // log if logging is configured; swallow to not prevent app start
+        Console.WriteLine($"Error seeding roles: {ex.Message}");
+    }
+}
+
 app.Run();
+
+static async Task SeedRolesAsync(RoleManager<IdentityRole<long>> roleManager)
+{
+    var roles = new Dictionary<string, string[]>
+    {
+        { "Admin", new[] { "projects.view", "projects.create", "projects.edit", "projects.delete", "users.manage" } },
+        { "Manager", new[] { "projects.view", "projects.create", "projects.edit" } },
+        { "User", new[] { "projects.view" } }
+    };
+
+    foreach (var kv in roles)
+    {
+        var roleName = kv.Key;
+        var permissions = kv.Value;
+        var role = await roleManager.FindByNameAsync(roleName);
+        if (role == null)
+        {
+            role = new IdentityRole<long> { Name = roleName };
+            var created = await roleManager.CreateAsync(role);
+            if (!created.Succeeded) continue;
+            role = await roleManager.FindByNameAsync(roleName);
+        }
+
+        var existing = await roleManager.GetClaimsAsync(role);
+        foreach (var perm in permissions)
+        {
+            if (!existing.Any(c => c.Type == "permission" && c.Value == perm))
+            {
+                await roleManager.AddClaimAsync(role, new System.Security.Claims.Claim("permission", perm));
+            }
+        }
+    }
+}

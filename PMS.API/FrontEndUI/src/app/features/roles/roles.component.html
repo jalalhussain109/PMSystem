@@ -1,0 +1,98 @@
+<div class="page-heading">
+  <div>
+    <h2>Roles &amp; permissions</h2>
+    <p class="muted">Create roles and manage their permissions.</p>
+  </div>
+  <a class="secondary-button" routerLink="/users/assign-roles">Assign roles to users</a>
+</div>
+
+@if (actionError()) { <p class="notice error-notice" role="alert">{{ actionError() }}</p> }
+@if (actionMessage()) { <p class="action-success" role="status">{{ actionMessage() }}</p> }
+
+<section class="role-panel">
+  <header class="panel-heading">
+    <div>
+      <h3>Create role</h3>
+      <p class="muted">Add a role that can be assigned to users.</p>
+    </div>
+  </header>
+  <form class="create-role-form" #roleForm="ngForm" (ngSubmit)="createRole()">
+    <label>
+      Role name
+      <input name="roleName" [(ngModel)]="newRoleName" required maxlength="64" placeholder="e.g. ProjectManager">
+    </label>
+    <button class="primary-button compact" type="submit" [disabled]="roleForm.invalid || saving()">
+      {{ saving() ? 'Saving…' : 'Create role' }}
+    </button>
+  </form>
+</section>
+
+<section class="role-panel">
+  <header class="panel-heading">
+    <div>
+      <h3>Manage role permissions</h3>
+      <p class="muted">Expand a role to add or remove its permissions.</p>
+    </div>
+    <button class="secondary-button" type="button" (click)="loadRoles()" [disabled]="loadingRoles()">Refresh</button>
+  </header>
+  @if (loadingRoles()) {
+    <div class="empty-state"><span class="loader"></span><p>Loading roles…</p></div>
+  } @else if (rolesError()) {
+    <p class="form-error" role="alert">{{ rolesError() }}</p>
+    <button class="secondary-button" type="button" (click)="loadRoles()">Retry loading roles</button>
+  } @else {
+    <div class="role-list">
+      @for (role of roles(); track role.role) {
+        <article class="role-item">
+          <div class="role-header">
+            @if (editingRoleName() === role.role) {
+              <form class="edit-role-form" #editRoleForm="ngForm" (ngSubmit)="saveRoleName()">
+                <label class="visually-hidden" [attr.for]="'role-name-' + role.role">Role name</label>
+                <input [id]="'role-name-' + role.role" name="editRoleName" [(ngModel)]="editRoleValue" required maxlength="64">
+                <button class="secondary-button" type="submit" [disabled]="editRoleForm.invalid || saving() || editRoleValue.trim() === role.role">Save name</button>
+                <button class="secondary-button" type="button" [disabled]="saving()" (click)="cancelEditRole()">Cancel</button>
+              </form>
+            } @else {
+              <button class="role-toggle" type="button" [attr.aria-expanded]="activeRole() === role.role" (click)="activeRole.set(activeRole() === role.role ? '' : role.role)">
+                <strong>{{ role.role }}</strong>
+                <span>{{ role.permissions.length }} permissions</span>
+                <span aria-hidden="true">{{ activeRole() === role.role ? '−' : '+' }}</span>
+              </button>
+              <div class="role-actions">
+                <button class="text-button" type="button" (click)="startEditRole(role.role)" [disabled]="saving()">Edit role</button>
+                <button class="text-button danger-button" type="button" (click)="deleteRole(role.role)" [disabled]="saving()">Delete</button>
+              </div>
+            }
+          </div>
+          @if (activeRole() === role.role) {
+            <div class="role-content">
+              <div class="permission-list">
+                @for (permission of role.permissions; track permission) {
+                  <span class="permission-chip">
+                    {{ permission }}
+                    <button type="button" [attr.aria-label]="'Remove permission ' + permission" [disabled]="saving()" (click)="removePermission(role.role, permission)">×</button>
+                  </span>
+                } @empty {
+                  <p class="muted">No permissions assigned.</p>
+                }
+              </div>
+              @if (availablePermissionsFor(role).length) {
+                <div class="add-permission">
+                  <select [ngModel]="selectedPermission()" (ngModelChange)="selectedPermission.set($event)" [name]="'permission-' + role.role" aria-label="Permission to add">
+                    <option value="">Select a permission</option>
+                    @for (permission of availablePermissionsFor(role); track permission) {
+                      <option [value]="permission">{{ permission }}</option>
+                    }
+                  </select>
+                  <button class="secondary-button" type="button" (click)="addPermission(role.role)" [disabled]="!selectedPermission() || saving()">Add permission</button>
+                </div>
+              }
+            </div>
+          }
+        </article>
+      } @empty {
+        <p class="muted">No roles have been created yet.</p>
+      }
+    </div>
+  }
+</section>

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PMS.Application.DTOs;
 using PMS.Application.Interfaces;
 using PMS.Domain.Interfaces;
+using PMS.Domain.Entities;
 using System.Security.Claims;
 
 namespace PMS.API.Controllers;
@@ -15,11 +16,66 @@ public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
     private readonly IIdentityUserRepository _userRepository;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<IdentityRole<long>> _roleManager;
 
-    public AuthController(AuthService authService, IIdentityUserRepository userRepository)
+    public AuthController(AuthService authService, IIdentityUserRepository userRepository, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<long>> roleManager)
     {
         _authService = authService;
         _userRepository = userRepository;
+        _userManager = userManager;
+        _roleManager = roleManager;
+    }
+
+    [Authorize]
+    [HttpGet("permissions")]
+    public IActionResult GetPermissions()
+    {
+        // collect permission claims from token
+        var perms = User.Claims
+            .Where(c => string.Equals(c.Type, "permission", StringComparison.OrdinalIgnoreCase))
+            .Select(c => c.Value)
+            .Distinct()
+            .ToArray();
+
+        // collect roles from token (try both standard ClaimTypes.Role and custom 'role')
+        var roles = User.Claims
+            .Where(c => string.Equals(c.Type, ClaimTypes.Role, StringComparison.OrdinalIgnoreCase) || string.Equals(c.Type, "role", StringComparison.OrdinalIgnoreCase))
+            .Select(c => c.Value)
+            .Distinct()
+            .ToArray();
+
+        return Ok(new { roles, permissions = perms });
+    }
+
+    [Authorize]
+    [HttpGet("permissions/effective")]
+    public async Task<IActionResult> GetEffectivePermissions()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        if (!long.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null) return Unauthorized();
+
+        var userClaims = await _userManager.GetClaimsAsync(user);
+        var userPermissions = userClaims.Where(c => string.Equals(c.Type, "permission", StringComparison.OrdinalIgnoreCase)).Select(c => c.Value);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var rolePermissions = new List<string>();
+        foreach (var roleName in roles)
+        {
+            var role = await _roleManager.FindByNameAsync(roleName);
+            if (role == null) continue;
+            var claims = await _roleManager.GetClaimsAsync(role);
+            rolePermissions.AddRange(claims.Where(c => string.Equals(c.Type, "permission", StringComparison.OrdinalIgnoreCase)).Select(c => c.Value));
+        }
+
+        var effective = userPermissions.Concat(rolePermissions).Distinct().ToArray();
+
+        return Ok(new { roles, permissions = effective });
     }
 
     [AllowAnonymous]

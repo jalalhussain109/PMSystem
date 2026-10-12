@@ -1,0 +1,1 @@
+import{it as h,r as A}from"./chunk-DXAuqWwz.js";import{_ as l}from"./main-KLYMDFLC.js";var a=class r{api=h(l);getAll(){return this.api.get(`Users`)}create(e){return this.api.post(`Users`,e)}update(e,t){return this.api.put(`Users/${e}`,t)}static ɵfac=function(t){return new(t||r)};static ɵprov=A({token:r,factory:r.ɵfac,providedIn:`root`})};export{a as t};

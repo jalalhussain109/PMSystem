@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink, RouterModule } from '@angular/router';
 import { finalize } from 'rxjs';
 import { CreateUserDto, UpdateUserDto, UserDto, UserService } from './user.service';
 
@@ -12,7 +13,7 @@ interface UserForm extends UpdateUserDto {
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, RouterModule, FormsModule, RouterLink],
   templateUrl: './users.component.html',
   styleUrl: './users.component.css'
 })

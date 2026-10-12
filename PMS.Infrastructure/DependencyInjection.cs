@@ -21,6 +21,7 @@ namespace PMS.Infrastructure
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<PMS.Domain.Interfaces.IProjectMemberRepository, PMS.Infrastructure.Repositories.ProjectMemberRepository>();
             // Identity
+            services.AddScoped<PMS.Application.Interfaces.IUserRoleService, PMS.Infrastructure.Identity.UserRoleService>();
            
             // Register open-generic repository mapping
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));

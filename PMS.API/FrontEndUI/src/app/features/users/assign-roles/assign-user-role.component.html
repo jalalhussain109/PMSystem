@@ -1,0 +1,117 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">ADMINISTRATION</span>
+    <h2>Assign roles to a user</h2>
+    <p class="muted">Choose a user to view, assign, or remove their roles.</p>
+  </div>
+
+  <a class="secondary-button" routerLink="/users">Back to users</a>
+</div>
+
+<section class="assignment-card">
+
+  <div class="assignment-messages">
+    @if (actionError()) {
+      <p class="action-error color-error" role="status">{{ actionError() }}</p>
+    }
+    @if (actionMessage()) {
+      <p class="action-success" role="status">{{ actionMessage() }}</p>
+    }
+  </div>
+
+  @if (usersError()) {
+    <p class="form-error" role="alert">{{ usersError() }}</p>
+    <button class="secondary-button" type="button" (click)="loadUsers()">
+      Retry loading users
+    </button>
+  } @else {
+
+    <div class="assign-controls">
+
+      <label class="user-select">
+        User
+        <select
+          [ngModel]="selectedUserId()"
+          (ngModelChange)="onUserChange($event)"
+          name="selectedUser">
+          <option [ngValue]="null">
+            {{ loadingUsers() ? 'Loading users…' : 'Select a user' }}
+          </option>
+
+          @for (user of users(); track user.id) {
+            <option [ngValue]="user.id">
+              {{ userDisplayName(user) }}{{ user.isActive ? '' : ' (Inactive)' }}
+            </option>
+          }
+        </select>
+      </label>
+
+      @if (rolesError()) {
+        <div class="role-error">
+          <p class="form-error" role="alert">{{ rolesError() }}</p>
+          <button class="secondary-button" type="button" (click)="loadRoles()">
+            Retry loading roles
+          </button>
+        </div>
+      } @else {
+
+        <label class="role-select">
+          Role
+          <select
+            [ngModel]="selectedRole()"
+            (ngModelChange)="selectedRole.set($event)"
+            name="selectedRole"
+            [disabled]="!roles().length">
+            <option value="">
+              {{ loadingRoles() ? 'Loading roles…' : 'Select a role' }}
+            </option>
+
+            @for (role of roles(); track role.role) {
+              <option [value]="role.role">{{ role.role }}</option>
+            }
+          </select>
+        </label>
+
+        <button
+          class="primary-button compact assign-button"
+          type="button"
+          (click)="assignRole()"
+          [disabled]="selectedUserId() === null || !selectedRole() || saving() || loadingAccess()">
+          {{ saving() ? 'Saving…' : 'Assign role' }}
+        </button>
+      }
+
+    </div>
+  }
+
+  @if (loadingAccess()) {
+    <p class="form-message" role="status">Loading user roles…</p>
+  }
+
+  @if (accessError()) {
+    <p class="form-error" role="alert">{{ accessError() }}</p>
+    <button class="secondary-button" type="button" (click)="loadUserAccess()">
+      Retry
+    </button>
+  }
+
+  @if (userAccess(); as access) {
+    <div class="assigned-roles">
+      <h3>Assigned roles</h3>
+
+      @for (role of access.roles; track role) {
+        <span class="role-chip">
+          {{ role }}
+          <button
+            type="button"
+            [attr.aria-label]="'Remove ' + role + ' role'"
+            [disabled]="saving()"
+            (click)="removeRole(role)">×</button>
+        </span>
+      } @empty {
+        <p class="muted">This user has no assigned roles.</p>
+      }
+    </div>
+  }
+
+</section>

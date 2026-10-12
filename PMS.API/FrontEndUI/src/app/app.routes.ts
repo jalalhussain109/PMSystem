@@ -42,7 +42,21 @@ export const routes: Routes = [
         path: 'users',
         canActivate: [permissionGuard],
         //data: { roles: ['Admin'] },
-        loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
+        children: [
+          {
+            path: 'assign-roles',
+            canActivate: [permissionGuard],
+            //data: { roles: ['Admin'] },
+            loadComponent: () => import('./features/users/assign-roles/assign-user-role.component').then(m => m.AssignUserRoleComponent)
+          },
+          { path: '', pathMatch: 'full', loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent) }
+        ]
+      },
+      {
+        path: 'roles',
+        canActivate: [permissionGuard],
+        //data: { roles: ['Admin'] },
+        loadComponent: () => import('./features/roles/roles.component').then(m => m.RolesComponent)
       }
     ]
   },

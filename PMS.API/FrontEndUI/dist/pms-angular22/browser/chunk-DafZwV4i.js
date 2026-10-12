@@ -1,1 +1,0 @@
-import{Gt as g,y as F}from"./chunk-IXmvNtv5.js";import{y as l}from"./main-6PZXBGQN.js";var a=class r{api=g(l);getAll(){return this.api.get(`Users`)}create(e){return this.api.post(`Users`,e)}update(e,t){return this.api.put(`Users/${e}`,t)}static ɵfac=function(t){return new(t||r)};static ɵprov=F({token:r,factory:r.ɵfac,providedIn:`root`})};export{a as t};

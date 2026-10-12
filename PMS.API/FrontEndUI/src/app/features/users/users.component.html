@@ -1,10 +1,12 @@
 <div class="page-heading">
   <div>
-    <span class="eyebrow">ADMINISTRATION</span>
-    <h2>Users &amp; access</h2>
+    <h2>Users manage</h2>
     <p class="muted">View user profiles and manage account details and access.</p>
   </div>
-  <button class="primary-button compact" type="button" (click)="addUser()">+ Add User</button>
+  <div class="heading-actions">
+    <a class="secondary-button" routerLink="/users/assign-roles">Assign roles</a>
+    <button class="primary-button compact" type="button" (click)="addUser()">+ Add User</button>
+  </div>
 </div>
 
 @if (loading()) {
@@ -53,6 +55,19 @@
               <button type="button" class="table-action icon-action" (click)="editDetails(user)" aria-label="Edit user" title="Edit">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"></path></svg>
               </button>
+
+              <!-- Assign Roles -->
+              <a class="table-action icon-action"
+                [routerLink]="['/users/assign-roles']"
+                [queryParams]="{ userId: user.id }"
+                aria-label="Assign roles to user"
+                title="Assign Roles">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="9" cy="8" r="4"></circle>
+                  <path d="M2 21v-2a7 7 0 0 1 14 0v2"></path>
+                  <path d="M19 8v6M16 11h6"></path>
+                </svg>
+              </a>
             </td>
           </tr>
         }

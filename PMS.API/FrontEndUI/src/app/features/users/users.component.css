@@ -2,6 +2,12 @@
   display: block;
 }
 
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .row-actions {
   white-space: nowrap;
 }
