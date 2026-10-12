@@ -3,7 +3,9 @@
   <h2>My tasks</h2>
   <p class="muted">Keep track of the next actions and deadlines.</p>
 </div>
-<a class="primary-button compact" routerLink="/tasks/add">+ Add Task</a></div>
+@if (auth.hasAllPermissions(['Tasks.Create'])) {
+  <a class="primary-button compact" routerLink="/tasks/add">+ Add Task</a>
+}</div>
 @if (loading()) { <div class="empty-state"><span class="loader"></span><p>Loading tasks…</p></div> }
 @else if (error()) { 
   <div class="notice error-notice">
@@ -63,7 +65,9 @@
             <td>{{ task.dueDate ? (task.dueDate | date:'mediumDate') : '—' }}</td>
             <td class="task-actions">
               <a [routerLink]="['/tasks', task.id, 'view']">View</a>
-              <a [routerLink]="['/tasks', task.id, 'edit']">Edit</a>
+              @if (auth.hasAllPermissions(['Tasks.Edit'])) {
+                <a [routerLink]="['/tasks', task.id, 'edit']">Edit</a>
+              }
             </td>
           </tr>
         } @empty {

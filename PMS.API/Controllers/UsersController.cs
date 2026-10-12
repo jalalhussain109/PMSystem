@@ -1,6 +1,7 @@
 using Azure.Core;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using PMS.Application.Common;
 using PMS.Application.DTOs;
 using PMS.Application.Interfaces;
 using PMS.Domain.Entities;
@@ -30,8 +31,16 @@ namespace PMS.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync()
+        public async Task<IActionResult> GetAllAsync([FromQuery] int? page = null, [FromQuery] int? pageSize = null)
         {
+            if (page.HasValue || pageSize.HasValue)
+            {
+                var pagedResult = await _userService.GetPagedAsync(page ?? 1, pageSize ?? 20);
+                if (!pagedResult.Succeeded)
+                    return BadRequest(new { errors = pagedResult.Errors });
+                return Ok(pagedResult);
+            }
+
             var result = await _userService.GetAllAsync();
             if (!result.Succeeded)
                 return BadRequest(new { errors = result.Errors });

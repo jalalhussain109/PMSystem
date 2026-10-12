@@ -14,6 +14,8 @@ namespace PMS.Application.Interfaces
 
         Task<ServiceResult<List<UserDto>>> GetAllAsync();
 
+        Task<ServiceResult<PagedResult<UserDto>>> GetPagedAsync(int page = 1, int pageSize = 20);
+
         Task<ServiceResult<UserDto>> UpdateAsync( long id, UpdateUserDto dto);
 
         Task<ServiceResult<bool>> DeleteAsync(long id);

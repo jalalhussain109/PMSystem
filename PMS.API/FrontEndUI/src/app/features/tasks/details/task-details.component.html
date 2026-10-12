@@ -5,8 +5,12 @@
   </div>
   <div class="heading-actions">
     @if (task(); as currentTask) {
-      <a class="primary-button compact" [routerLink]="['/tasks', currentTask.id, 'subtasks', 'add']">Add subtask</a>
-      <a class="primary-button compact" [routerLink]="['/tasks', currentTask.id, 'edit']">Edit task</a>
+      @if (auth.hasAllPermissions(['Tasks.Create'])) {
+        <a class="primary-button compact" [routerLink]="['/tasks', currentTask.id, 'subtasks', 'add']">Add subtask</a>
+      }
+      @if (auth.hasAllPermissions(['Tasks.Edit'])) {
+        <a class="primary-button compact" [routerLink]="['/tasks', currentTask.id, 'edit']">Edit task</a>
+      }
     }
     <a class="secondary-button" routerLink="/tasks">Back to tasks</a>
   </div>

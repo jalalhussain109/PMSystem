@@ -64,6 +64,32 @@ namespace PMS.Application.Services
             return ServiceResult<List<UserDto>>.Success(list);
         }
 
+        public async Task<ServiceResult<PagedResult<UserDto>>> GetPagedAsync(int page = 1, int pageSize = 20)
+        {
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 20;
+            if (pageSize > 100) pageSize = 100;
+
+            var users = (await _userRepository.GetAllAsync())
+                .OrderBy(user => user.UserName)
+                .ToList();
+            var totalCount = users.Count;
+            var items = users
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(user => _mapper.Map<UserDto>(user))
+                .ToList();
+
+            return ServiceResult<PagedResult<UserDto>>.Success(new PagedResult<UserDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            });
+        }
+
         public async Task<ServiceResult<UserDto>> UpdateAsync(long id, UpdateUserDto dto)
         {
             var user = await _userRepository.GetByIdAsync(id);

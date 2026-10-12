@@ -4,6 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterModule } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { CreateUserDto, UpdateUserDto, UserDto, UserService } from './user.service';
 
 interface UserForm extends UpdateUserDto {
@@ -18,7 +19,9 @@ interface UserForm extends UpdateUserDto {
   styleUrl: './users.component.css'
 })
 export class UsersComponent {
+  readonly auth = inject(AuthService);
   private readonly service = inject(UserService);
+  private requestId = 0;
 
   readonly users = signal<UserDto[]>([]);
   readonly loading = signal(false);
@@ -28,23 +31,60 @@ export class UsersComponent {
   readonly viewingUser = signal<UserDto | null>(null);
   readonly editingUser = signal<UserDto | null>(null);
   readonly creatingUser = signal(false);
+  readonly page = signal(1);
+  readonly pageSize = signal(20);
+  readonly totalCount = signal(0);
+  readonly totalPages = signal(0);
   editForm: UserForm = this.emptyEditForm();
 
   constructor() {
     this.reload();
   }
 
-  reload(): void {
+  reload(page = this.page()): void {
+    const requestId = ++this.requestId;
+    this.page.set(page);
     this.loading.set(true);
     this.error.set('');
-    this.service.getAll().pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: users => this.users.set(users),
-      error: (err: HttpErrorResponse) => this.error.set(err.status === 401
-        ? 'Your session may have expired. Please sign in again.'
-        : err.status === 403
-          ? 'Your account does not have permission to view users.'
-          : 'Check the API URL, endpoint, and network connection.')
+    this.service.getPaged({ page, pageSize: this.pageSize() }).pipe(finalize(() => {
+      if (requestId === this.requestId) this.loading.set(false);
+    })).subscribe({
+      next: result => {
+        if (requestId !== this.requestId) return;
+        this.users.set(result.items);
+        this.totalCount.set(result.totalCount);
+        this.page.set(result.page);
+        this.pageSize.set(result.pageSize);
+        this.totalPages.set(result.totalPages);
+      },
+      error: (err: HttpErrorResponse) => {
+        if (requestId !== this.requestId) return;
+        this.error.set(err.status === 401
+          ? 'Your session may have expired. Please sign in again.'
+          : err.status === 403
+            ? 'Your account does not have permission to view users.'
+            : 'Check the API URL, endpoint, and network connection.');
+      }
     });
+  }
+
+  setPageSize(value: number): void {
+    this.pageSize.set(Number(value));
+    this.reload(1);
+  }
+
+  setPageSizeFromEvent(event: Event): void {
+    if (event.target instanceof HTMLSelectElement) {
+      this.setPageSize(Number(event.target.value));
+    }
+  }
+
+  previousPage(): void {
+    if (this.page() > 1) this.reload(this.page() - 1);
+  }
+
+  nextPage(): void {
+    if (this.page() < this.totalPages()) this.reload(this.page() + 1);
   }
 
   viewDetails(user: UserDto): void {
@@ -98,7 +138,7 @@ export class UsersComponent {
         if (user) {
           this.users.update(users => users.map(item => item.id === savedUser.id ? savedUser : item));
         } else {
-          this.users.update(users => [savedUser, ...users]);
+          this.reload(1);
         }
         this.editingUser.set(null);
         this.creatingUser.set(false);

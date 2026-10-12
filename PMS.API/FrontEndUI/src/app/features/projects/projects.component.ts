@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { ProjectDto, ProjectService } from './project.service';
 
 @Component({
@@ -13,6 +14,7 @@ import { ProjectDto, ProjectService } from './project.service';
   styleUrl: './projects.component.css'
 })
 export class ProjectsComponent {
+  readonly auth = inject(AuthService);
   private readonly service = inject(ProjectService);
   private requestId = 0;
 
@@ -48,7 +50,7 @@ export class ProjectsComponent {
     this.page.set(page);
     this.loading.set(true);
     this.error.set('');
-    this.service.getPaged(page, this.pageSize()).pipe(finalize(() => {
+    this.service.getAll({ page, pageSize: this.pageSize() }).pipe(finalize(() => {
       if (requestId === this.requestId) this.loading.set(false);
     })).subscribe({
       next: result => {

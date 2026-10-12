@@ -66,6 +66,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IEffectivePermissionService, IdentityPermissionService>();
 builder.Services.AddScoped<PMS.Application.Interfaces.IProjectMemberService, PMS.Application.Services.ProjectMemberService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 // AutoMapper

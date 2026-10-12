@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AuthService } from '../../../core/auth/auth.service';
 import { UserDto, UserService } from '../../users/user.service';
 import { ProjectDto, ProjectService } from '../project.service';
 
@@ -14,6 +15,7 @@ import { ProjectDto, ProjectService } from '../project.service';
   styleUrl: './project-details.component.css'
 })
 export class ProjectDetailsComponent {
+  readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly projectService = inject(ProjectService);
   private readonly userService = inject(UserService);

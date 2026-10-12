@@ -4,8 +4,12 @@
     <p class="muted">View user profiles and manage account details and access.</p>
   </div>
   <div class="heading-actions">
-    <a class="secondary-button" routerLink="/users/assign-roles">Assign roles</a>
-    <button class="primary-button compact" type="button" (click)="addUser()">+ Add User</button>
+    @if (auth.hasAnyRole(['Admin'])) {
+      <a class="secondary-button" routerLink="/users/assign-roles">Assign roles</a>
+    }
+    @if (auth.hasAllPermissions(['Users.Create'])) {
+      <button class="primary-button compact" type="button" (click)="addUser()">+ Add User</button>
+    }
   </div>
 </div>
 
@@ -22,9 +26,6 @@
     <small>Confirm that GET /api/Users is available and the account has permission to view users.</small>
     <button class="secondary-button" type="button" (click)="reload()">Try again</button>
   </div>
-}
-@else if (users().length === 0) {
-  <div class="empty-state"><p>No users found.</p></div>
 }
 @else {
   <div class="table-wrap">
@@ -52,28 +53,57 @@
               <button type="button" class="table-action icon-action" (click)="viewDetails(user)" aria-label="View user details" title="View details">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </button>
-              <button type="button" class="table-action icon-action" (click)="editDetails(user)" aria-label="Edit user" title="Edit">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"></path></svg>
-              </button>
+              @if (auth.hasAllPermissions(['Users.Edit'])) {
+                <button type="button" class="table-action icon-action" (click)="editDetails(user)" aria-label="Edit user" title="Edit">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"></path></svg>
+                </button>
+              }
 
               <!-- Assign Roles -->
-              <a class="table-action icon-action"
-                [routerLink]="['/users/assign-roles']"
-                [queryParams]="{ userId: user.id }"
-                aria-label="Assign roles to user"
-                title="Assign Roles">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="9" cy="8" r="4"></circle>
-                  <path d="M2 21v-2a7 7 0 0 1 14 0v2"></path>
-                  <path d="M19 8v6M16 11h6"></path>
-                </svg>
-              </a>
+              @if (auth.hasAnyRole(['Admin'])) {
+                <a class="table-action icon-action"
+                  [routerLink]="['/users/assign-roles']"
+                  [queryParams]="{ userId: user.id }"
+                  aria-label="Assign roles to user"
+                  title="Assign Roles">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="4"></circle>
+                    <path d="M2 21v-2a7 7 0 0 1 14 0v2"></path>
+                    <path d="M19 8v6M16 11h6"></path>
+                  </svg>
+                </a>
+              }
             </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="no-results" colspan="5">No users found.</td>
           </tr>
         }
       </tbody>
     </table>
   </div>
+  <nav class="pagination" aria-label="User pages">
+    <span class="pagination-summary">
+      @if (totalCount()) {
+        Showing {{ (page() - 1) * pageSize() + 1 }}–{{ (page() - 1) * pageSize() + users().length }} of {{ totalCount() }} users
+      } @else {
+        No users found
+      }
+    </span>
+    <label class="page-size">
+      Rows per page
+      <select [value]="pageSize()" (change)="setPageSizeFromEvent($event)">
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </label>
+    <button class="secondary-button" type="button" (click)="previousPage()" [disabled]="page() <= 1 || loading()">Previous</button>
+    <span class="page-indicator">Page {{ page() }} of {{ totalPages() || 1 }}</span>
+    <button class="secondary-button" type="button" (click)="nextPage()" [disabled]="page() >= totalPages() || loading()">Next</button>
+  </nav>
 }
 
 @if (viewingUser(); as user) {

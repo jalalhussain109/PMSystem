@@ -3,25 +3,30 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using PMS.Application.DTOs;
+using PMS.Application.Interfaces;
+using PMS.Domain.Constants;
 using PMS.Domain.Entities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using static PMS.Domain.Constants.PermissionConstants;
 
 public class AuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole<long>> _roleManager;
+    private readonly IEffectivePermissionService _permissionService;
     private readonly IConfiguration _configuration;
 
-    public AuthService(
-        UserManager<ApplicationUser> userManager,
+    public AuthService(UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole<long>> roleManager,
+        IEffectivePermissionService permissionService,
         IConfiguration configuration)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
+        _permissionService = permissionService;
     }
 
     public async Task<string?> LoginAsync(LoginDto dto)
@@ -48,17 +53,22 @@ public class AuthService
         {
             claims.Add(new Claim("role", role));
 
-            var identityRole = await _roleManager.FindByNameAsync(role);
-            if (identityRole is null)
-                continue;
+            //var identityRole = await _roleManager.FindByNameAsync(role);
+            //if (identityRole is null)
+            //    continue;
 
-            var roleClaims = await _roleManager.GetClaimsAsync(identityRole);
+            //var roleClaims = await _roleManager.GetClaimsAsync(identityRole);
 
-            foreach (var claim in roleClaims.Where(
-                         c => c.Type == "permission"))
-            {
-                claims.Add(new Claim("permission", claim.Value));
-            }
+            //foreach (var claim in roleClaims.Where(c => c.Type == PermissionConstants.ClaimType))
+            //{
+            //    claims.Add(new Claim(PermissionConstants.ClaimType, claim.Value));
+            //}
+        }
+
+        var permissions = await _permissionService.GetEffectivePermissionsAsync(user.Id);
+        foreach (var permission in permissions)
+        {
+            claims.Add(new Claim(PermissionConstants.ClaimType, permission));
         }
 
         var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is missing.");
@@ -74,9 +84,7 @@ public class AuthService
             issuer: issuer,
             audience: audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(
-                Convert.ToDouble(
-                    _configuration["Jwt:ExpiryMinutes"] ?? "30")),
+            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpiryMinutes"] ?? "30")),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

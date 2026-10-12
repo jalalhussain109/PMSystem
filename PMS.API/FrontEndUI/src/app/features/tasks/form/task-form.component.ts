@@ -151,7 +151,7 @@ export class TaskFormComponent {
     this.lookupsLoading.set(true);
     this.lookupError.set('');
     forkJoin({
-      projects: this.projectService.getAll(),
+      projects: this.projectService.getLookup(),
       users: this.userService.getAll()
     }).pipe(finalize(() => this.lookupsLoading.set(false))).subscribe({
       next: ({ projects, users }) => {

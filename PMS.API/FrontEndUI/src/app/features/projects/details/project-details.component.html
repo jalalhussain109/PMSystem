@@ -5,7 +5,9 @@
   </div>
   <div class="heading-actions">
     @if (project(); as currentProject) {
-      <a class="primary-button compact" [routerLink]="['/projects', currentProject.id, 'edit']">Edit project</a>
+      @if (auth.hasAllPermissions(['Projects.Edit'])) {
+        <a class="primary-button compact" [routerLink]="['/projects', currentProject.id, 'edit']">Edit project</a>
+      }
     }
     <a class="secondary-button" routerLink="/projects">Back to projects</a>
   </div>

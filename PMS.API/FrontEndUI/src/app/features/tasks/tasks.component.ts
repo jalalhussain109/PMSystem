@@ -4,6 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { ProjectDto, ProjectService } from '../projects/project.service';
 import { TaskDto, TaskService } from './task.service';
 
@@ -15,6 +16,7 @@ import { TaskDto, TaskService } from './task.service';
   styleUrl: './tasks.component.css'
 })
 export class TasksComponent {
+  readonly auth = inject(AuthService);
   private readonly service = inject(TaskService);
   private readonly projectService = inject(ProjectService);
   private requestId = 0;
@@ -76,8 +78,11 @@ export class TasksComponent {
   loadProjects(): void {
     this.projectsLoading.set(true);
     this.projectsError.set('');
-    this.projectService.getAll().pipe(finalize(() => this.projectsLoading.set(false))).subscribe({
-      next: projects => this.projects.set(projects),
+    this.projectService.getLookup().pipe(finalize(() => this.projectsLoading.set(false))).subscribe({
+      next: projects => {
+        
+        this.projects.set(projects)
+      },
       error: (err: HttpErrorResponse) => this.projectsError.set(err.status === 401
         ? 'Your session may have expired. Please sign in again.'
         : err.status === 403

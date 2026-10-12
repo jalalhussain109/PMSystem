@@ -3,7 +3,9 @@
     <h2>Projects</h2>
     <p class="muted">View and organize projects in your workspace.</p>
   </div>
-  <a class="primary-button compact" routerLink="/projects/add">+ Add project</a>
+  @if (auth.hasAllPermissions(['Projects.Create'])) {
+    <a class="primary-button compact" routerLink="/projects/add">+ Add project</a>
+  }
 </div>
 @if (loading()) { 
   <div class="empty-state">
@@ -46,12 +48,16 @@
               <a class="table-action icon-action" [routerLink]="['/projects', project.id, 'view']" aria-label="View project details" title="View details">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </a>
-              <a class="table-action icon-action" [routerLink]="['/projects', project.id, 'edit']" aria-label="Edit project" title="Edit">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"></path></svg>
-              </a>
-              <button class="table-action icon-action" (click)="deleteProject(project.id)" aria-label="Delete project" title="Delete">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6M10 6V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"></path></svg>
-              </button>
+              @if (auth.hasAllPermissions(['Projects.Edit'])) {
+                <a class="table-action icon-action" [routerLink]="['/projects', project.id, 'edit']" aria-label="Edit project" title="Edit">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"></path></svg>
+                </a>
+              }
+              @if (auth.hasAllPermissions(['Projects.Delete'])) {
+                <button class="table-action icon-action" (click)="deleteProject(project.id)" aria-label="Delete project" title="Delete">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6M10 6V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              }
             </td>
           </tr>
         } @empty {

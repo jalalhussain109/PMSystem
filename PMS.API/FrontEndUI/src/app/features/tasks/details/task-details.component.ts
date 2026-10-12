@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AuthService } from '../../../core/auth/auth.service';
 import { ProjectDto, ProjectService } from '../../projects/project.service';
 import { UserDto, UserService } from '../../users/user.service';
 import { TaskDto, TaskService } from '../task.service';
@@ -15,6 +16,7 @@ import { TaskDto, TaskService } from '../task.service';
   styleUrl: './task-details.component.css'
 })
 export class TaskDetailsComponent {
+  readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly taskService = inject(TaskService);
   private readonly projectService = inject(ProjectService);
@@ -59,7 +61,7 @@ export class TaskDetailsComponent {
 
   loadLookups(): void {
     this.lookupsError.set('');
-    this.projectService.getAll().subscribe({
+    this.projectService.getLookup().subscribe({
       next: projects => this.projects.set(projects),
       error: () => this.lookupsError.set('Could not load project and user names. IDs are shown when names are unavailable.')
     });

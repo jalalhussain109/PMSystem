@@ -49,7 +49,7 @@ interface ProjectListEnvelope {
   errors?: string[];
 }
 
-interface PagedProjectResponse {
+export interface PagedProjectResponse {
   items: ProjectResponse[];
   totalCount: number;
   page: number;
@@ -79,30 +79,15 @@ function mapProject(project: ProjectResponse): ProjectDto {
 export class ProjectService {
   private readonly api = inject(ApiClientService);
 
-  getAll(): Observable<ProjectDto[]> {
-    return this.api.get<ProjectResponse[] | ProjectListEnvelope | null>('Projects').pipe(
+  getAll(options: { page: number; pageSize: number }): Observable<PagedProjectResult> {
+    return this.api.get<ProjectListEnvelope | null>('Projects', {
+      page: options.page,
+      pageSize: options.pageSize
+    }).pipe(
       map(result => {
-        if (result == null) return [];
-        if (Array.isArray(result)) return result.map(mapProject);
-
-        if (result.succeeded === true || result.success === true) {
-          if (result.data == null) return [];
-          if (Array.isArray(result.data)) return result.data.map(mapProject);
-          throw new Error('The projects response data must be an array.');
+        if (result == null) {
+          throw new Error('The projects response is empty.');
         }
-
-        if (result.succeeded === false || result.success === false) {
-          throw new Error(result.errors?.join(', ') || 'Unable to load projects.');
-        }
-
-        throw new Error('The projects response has an unexpected format.');
-      })
-    );
-  }
-
-  getPaged(page: number, pageSize: number): Observable<PagedProjectResult> {
-    return this.api.get<ProjectListEnvelope>('Projects', { page, pageSize }).pipe(
-      map(result => {
         if (result.succeeded === false || result.success === false) {
           throw new Error(result.errors?.join(', ') || 'Unable to load projects.');
         }
@@ -123,6 +108,30 @@ export class ProjectService {
           ...data,
           items: data.items.map(mapProject)
         };
+      })
+    );
+  }
+
+  getLookup(): Observable<ProjectDto[]> {
+    return this.api.get<ProjectResponse[] | ProjectListEnvelope | null>('Projects').pipe(
+      map(result => {
+        if (result == null) return [];
+        if (Array.isArray(result)) return result.map(mapProject);
+
+        if (result.succeeded === true || result.success === true) {
+          if (result.data == null) return [];
+          if (!Array.isArray(result.data) && Array.isArray(result.data.items)) {
+            return result.data.items.map(mapProject);
+          }
+          if (Array.isArray(result.data)) return result.data.map(mapProject);
+          throw new Error('The projects response data must be an array.');
+        }
+
+        if (result.succeeded === false || result.success === false) {
+          throw new Error(result.errors?.join(', ') || 'Unable to load projects.');
+        }
+
+        throw new Error('The projects response has an unexpected format.');
       })
     );
   }
