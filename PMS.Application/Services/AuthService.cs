@@ -35,7 +35,9 @@ public class AuthService
 
         var claims = new List<Claim>
         {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(ClaimTypes.Name, user.UserName ?? string.Empty),
             new(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email, user.UserName ?? string.Empty),
             new(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
