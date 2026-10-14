@@ -2,23 +2,29 @@
   <div><span class="eyebrow">OVERVIEW</span><h2>Your workspace</h2><p class="muted">A clear view of the work moving your team forward.</p>
   </div><a class="primary-button compact" routerLink="/projects">Explore projects <span>→</span></a>
 </div>
+@if (errorMessage()) {
+  <div class="panel" role="alert">
+    <p>{{ errorMessage() }}</p>
+    <button class="primary-button compact" type="button" (click)="loadDashboardData()">Try again</button>
+  </div>
+}
 <div class="stats-grid">
   <article class="stat-card">
     <div class="stat-top">
       <span class="stat-icon violet">◫</span>
       <span class="stat-caption">PORTFOLIO</span>
     </div>
-    <div class="stat-number">—</div>
+    <div class="stat-number">{{ loadingData() ? '…' : dashboardData()?.activeProjects ?? '—' }}</div>
     <div class="stat-label">Active projects</div>
-    <div class="stat-foot">Connect your projects API to load data</div>
+    <div class="stat-foot">Across your workspace</div>
   </article>
   <article class="stat-card">
     <div class="stat-top">
       <span class="stat-icon blue">✓</span>
       <span class="stat-caption">EXECUTION</span>
     </div>
-    <div class="stat-number">—</div>
-    <div class="stat-label">Open tasks</div>
+    <div class="stat-number">{{ loadingData() ? '…' : dashboardData()?.openTasks ?? '—' }}</div>
+    <div class="stat-label">Open & In-Progress tasks</div>
     <div class="stat-foot">Track work across your team</div>
   </article>
   <article class="stat-card">
@@ -26,7 +32,7 @@
       <span class="stat-icon amber">◷</span>
       <span class="stat-caption">UPCOMING</span>
     </div>
-    <div class="stat-number">—</div>
+    <div class="stat-number">{{ loadingData() ? '…' : dashboardData()?.dueThisWeek ?? '—' }}</div>
     <div class="stat-label">Due this week</div>
     <div class="stat-foot">Stay ahead of deadlines</div>
   </article>
@@ -35,7 +41,7 @@
       <span class="stat-icon green">♙</span>
       <span class="stat-caption">PEOPLE</span>
     </div>
-    <div class="stat-number">—</div>
+    <div class="stat-number">{{ loadingData() ? '…' : dashboardData()?.teamMembers ?? '—' }}</div>
     <div class="stat-label">Team members</div>
     <div class="stat-foot">Collaborate in one place</div>
   </article>
@@ -49,7 +55,7 @@
   </div>
   <div class="check-row"><span class="check-number">01</span>
     <div>
-      <strong>Connect your API</strong><p>Set the API URL in <code>environment.ts</code>.</p>
+      <strong>Review your portfolio</strong><p>See active projects and upcoming work at a glance.</p>
     </div><span class="row-arrow">↗</span></div>
     <div class="check-row"><span class="check-number">02</span>
       <div><strong>Sign in with Identity</strong>

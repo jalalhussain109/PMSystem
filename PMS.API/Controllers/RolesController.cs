@@ -11,7 +11,7 @@ namespace PMS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize(Roles = "Admin")]
+    [Authorize]
     public class RolesController : ControllerBase
     {
         private readonly PMS.Application.Interfaces.IUserRoleService _service;

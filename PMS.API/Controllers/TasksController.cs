@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PMS.Application.DTOs;
 using PMS.Application.Interfaces;
@@ -6,6 +7,7 @@ namespace PMS.API.Controllers
 {
     [ApiController]
     [Route("api")]
+    [Authorize]
     public class TasksController : ControllerBase
     {
         private readonly ITaskService _taskService;

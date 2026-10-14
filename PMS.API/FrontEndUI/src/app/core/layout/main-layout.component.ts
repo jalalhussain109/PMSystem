@@ -30,6 +30,7 @@ export class MainLayoutComponent {
     this.loadProfile();
   }
 
+
   loadProfile(): void {
     this.loadingProfile.set(true);
     this.profileError.set('');

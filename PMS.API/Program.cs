@@ -133,17 +133,17 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Seed roles and permissions
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
 
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<long>>>();
+//    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<long>>>();
 
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+//    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
-    await SeedRolesAsync(roleManager);
-    await SeedAdminUserAsync(userManager);
-}
+//    await SeedRolesAsync(roleManager);
+//    await SeedAdminUserAsync(userManager);
+//}
 
 app.Run();
 

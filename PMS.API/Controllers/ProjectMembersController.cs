@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PMS.Application.DTOs.ProjectMembers;
 using PMS.Application.Interfaces;
@@ -6,6 +7,7 @@ namespace PMS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProjectMembersController : ControllerBase
     {
         private readonly IProjectMemberService _service;
