@@ -5,15 +5,14 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using PMS.Infrastructure.Data;
 
 #nullable disable
 
 namespace PMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261009081635_AddIdentityTables")]
-    partial class AddIdentityTables
+    [Migration("20261013132945_AddProjectCompletedDate")]
+    partial class AddProjectCompletedDate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -252,6 +251,9 @@ namespace PMS.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint");
 
@@ -263,6 +265,9 @@ namespace PMS.Infrastructure.Migrations
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<long?>("ModifiedBy")
                         .HasColumnType("bigint");
@@ -282,8 +287,7 @@ namespace PMS.Infrastructure.Migrations
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
@@ -303,6 +307,9 @@ namespace PMS.Infrastructure.Migrations
                         .HasColumnType("bigint");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("ApplicationUserId")
+                        .HasColumnType("bigint");
 
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint");
@@ -324,16 +331,20 @@ namespace PMS.Infrastructure.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProjectId");
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ProjectId", "UserId")
+                        .IsUnique();
 
                     b.ToTable("ProjectMembers");
                 });
@@ -394,42 +405,6 @@ namespace PMS.Infrastructure.Migrations
                     b.ToTable("Tasks");
                 });
 
-            modelBuilder.Entity("PMS.Domain.Entities.User", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<long?>("CreatedBy")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DisplayName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long?>("ModifiedBy")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Users");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<long>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<long>", null)
@@ -483,16 +458,20 @@ namespace PMS.Infrastructure.Migrations
 
             modelBuilder.Entity("PMS.Domain.Entities.ProjectMember", b =>
                 {
+                    b.HasOne("PMS.Domain.Entities.ApplicationUser", null)
+                        .WithMany("ProjectMemberships")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("PMS.Domain.Entities.Project", "Project")
-                        .WithMany("Members")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PMS.Domain.Entities.User", "User")
-                        .WithMany("ProjectMemberships")
+                    b.HasOne("PMS.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Project");
@@ -502,45 +481,38 @@ namespace PMS.Infrastructure.Migrations
 
             modelBuilder.Entity("PMS.Domain.Entities.TaskItem", b =>
                 {
-                    b.HasOne("PMS.Domain.Entities.User", "Assignee")
+                    b.HasOne("PMS.Domain.Entities.ApplicationUser", "AssignedUser")
                         .WithMany("AssignedTasks")
-                        .HasForeignKey("AssignedTo");
+                        .HasForeignKey("AssignedTo")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PMS.Domain.Entities.TaskItem", "ParentTask")
                         .WithMany("SubTasks")
-                        .HasForeignKey("ParentTaskId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ParentTaskId");
 
                     b.HasOne("PMS.Domain.Entities.Project", "Project")
-                        .WithMany("Tasks")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Assignee");
+                    b.Navigation("AssignedUser");
 
                     b.Navigation("ParentTask");
 
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("PMS.Domain.Entities.Project", b =>
+            modelBuilder.Entity("PMS.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.Navigation("Members");
+                    b.Navigation("AssignedTasks");
 
-                    b.Navigation("Tasks");
+                    b.Navigation("ProjectMemberships");
                 });
 
             modelBuilder.Entity("PMS.Domain.Entities.TaskItem", b =>
                 {
                     b.Navigation("SubTasks");
-                });
-
-            modelBuilder.Entity("PMS.Domain.Entities.User", b =>
-                {
-                    b.Navigation("AssignedTasks");
-
-                    b.Navigation("ProjectMemberships");
                 });
 #pragma warning restore 612, 618
         }

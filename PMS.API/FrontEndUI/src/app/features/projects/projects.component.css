@@ -44,6 +44,27 @@
   text-align: center;
 }
 
+.status-select {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  padding: 4px 7px;
+  font: 400 11px 'DM Sans', sans-serif;
+}
+
+.status-select:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.status-action-error {
+  margin: 0 0 10px;
+  color: #b42318;
+  font-size: 12px;
+}
+
 .pagination {
   display: flex;
   align-items: center;

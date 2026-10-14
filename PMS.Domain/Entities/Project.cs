@@ -12,6 +12,7 @@ namespace PMS.Domain.Entities
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public DateTime? CompletedDate { get; set; }
         public ProjectStatus Status { get; set; } = ProjectStatus.Draft;
         public Priority Priority { get; set; } = Priority.Medium;
         public long? ProjectManagerId { get; set; }

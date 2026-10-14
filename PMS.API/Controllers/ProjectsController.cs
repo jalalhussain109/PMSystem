@@ -54,6 +54,15 @@ namespace PMS.API.Controllers
             return Ok(result.Data);
         }
 
+        [HttpPut("{id:long}/status")]
+        public async Task<IActionResult> ChangeStatus(long id, [FromBody] ProjectStatusDto dto)
+        {
+            var result = await _projectService.ChangeStatusAsync(id, dto);
+            if (result.NotFound) return NotFound();
+            if (!result.Succeeded) return BadRequest(new { errors = result.Errors });
+            return Ok(result.Data);
+        }
+
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {

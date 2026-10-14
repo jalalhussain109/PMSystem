@@ -55,13 +55,15 @@ export interface TaskDto {
   completedDate?: string | null;
 }
 
-const Task_STATUSES = ['Draft', 'Planning', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
+const TASK_STATUSES = ['Open', 'InProgress', 'OnHold', 'Completed', 'Cancelled'];
 
 function mapTask(task: TaskResponse): TaskDto {
+  const status = typeof task.status === 'number'
+    ? TASK_STATUSES[task.status] ?? String(task.status)
+    : task.status?.replace(/\s+/g, '');
   return {
     ...task,
-    //title: task.title ?? task.projectName ?? '',
-    status: typeof task.status === 'number' ? Task_STATUSES[task.status] : task.status
+    status
   };
 }
 @Injectable({ providedIn: 'root' })
@@ -140,5 +142,9 @@ export class TaskService {
 
   update(id: number, task: CreateTaskDto) {
     return this.api.put<TaskDto, CreateTaskDto>(`tasks/${id}`, task);
+  }
+
+  changeStatus(id: number, newStatus: string) {
+    return this.api.put<TaskDto, { newStatus: string }>(`tasks/${id}/status`, { newStatus });
   }
 }

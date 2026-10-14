@@ -31,11 +31,12 @@
         <span class="eyebrow">TASK #{{ currentTask.id }}</span>
         <h2>{{ currentTask.title }}</h2>
       </div>
-      <span class="status-pill">{{ currentTask.status || 'Open' }}</span>
+      <span class="status-pill">{{ statusLabel(currentTask.status) }}</span>
     </header>
     @if (lookupsError()) { <p class="lookup-warning" role="status">{{ lookupsError() }}</p> }
     <dl class="task-details">
       <div><dt>Project</dt><dd>{{ projectName(currentTask) }}</dd></div>
+      <div><dt>Status</dt><dd>{{ statusLabel(currentTask.status) }}</dd></div>
       <div><dt>Assignee</dt><dd>{{ assigneeName(currentTask.assignedTo) }}</dd></div>
       <div><dt>Priority</dt><dd>{{ priorityName(currentTask.priority) }}</dd></div>
       <div><dt>Start date</dt><dd>{{ currentTask.startDate ? (currentTask.startDate | date:'mediumDate') : '—' }}</dd></div>

@@ -189,7 +189,7 @@ namespace PMS.Application.Services
                 return ServiceResult<TaskDto>.Failure("Invalid status");
 
             task.Status = newState;
-            if (newState == TaskState.Completed) task.CompletedDate = DateTime.UtcNow;
+            task.CompletedDate = newState == TaskState.Completed ? DateTime.UtcNow : null;
 
             var updated = await _taskRepository.UpdateAsync(task);
             return ServiceResult<TaskDto>.Success(_mapper.Map<TaskDto>(updated));

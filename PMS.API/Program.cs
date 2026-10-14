@@ -115,21 +115,47 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    try
-    {
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole<long>>>();
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        // fire-and-forget seed
-        await SeedRolesAsync(roleManager);
-    }
-    catch (Exception ex)
-    {
-        // log if logging is configured; swallow to not prevent app start
-        Console.WriteLine($"Error seeding roles: {ex.Message}");
-    }
+
+    var roleManager =
+        services.GetRequiredService<RoleManager<IdentityRole<long>>>();
+
+    var userManager =
+        services.GetRequiredService<UserManager<ApplicationUser>>();
+
+    await SeedRolesAsync(roleManager);
+    await SeedAdminUserAsync(userManager);
 }
 
 app.Run();
+
+static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
+{
+    const string adminUserName = "admin";
+    const string adminEmail = "admin@pms.local";
+    const string adminPassword = "Admin@123";
+
+    var adminUser = await userManager.FindByNameAsync(adminUserName);
+
+    if (adminUser == null)
+    {
+        adminUser = new ApplicationUser
+        {
+            UserName = adminUserName,
+            Email = adminEmail,
+            DisplayName = "Administrator",
+            EmailConfirmed = true,
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow
+        };
+        var result = await userManager.CreateAsync(adminUser, adminPassword);
+    }
+
+    if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+    {
+        var result = await userManager.AddToRoleAsync(adminUser, "Admin");
+    }
+}
+
 
 static async Task SeedRolesAsync(RoleManager<IdentityRole<long>> roleManager)
 {

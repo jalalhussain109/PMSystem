@@ -33,15 +33,17 @@
         <span class="eyebrow">{{ currentProject.projectCode || 'PROJECT' }}</span>
         <h2>{{ currentProject.name }}</h2>
       </div>
-      <span class="status-pill">{{ currentProject.status || 'Active' }}</span>
+      <span class="status-pill">{{ statusLabel(currentProject.status) }}</span>
     </header>
     @if (usersError()) { <p class="users-warning" role="status">{{ usersError() }}</p> }
     <dl class="project-details">
       <div><dt>Project code</dt><dd>{{ currentProject.projectCode || '—' }}</dd></div>
+      <div><dt>Project Status</dt><dd>{{ statusLabel(currentProject.status) }}</dd></div>
       <div><dt>Priority</dt><dd>{{ currentProject.priority === undefined ? '—' : ['Low', 'Medium', 'High', 'Critical'][currentProject.priority] || currentProject.priority }}</dd></div>
       <div><dt>Project manager</dt><dd>{{ managerName(currentProject.projectManagerId) }}</dd></div>
       <div><dt>Start date</dt><dd>{{ currentProject.startDate ? (currentProject.startDate | date:'mediumDate') : '—' }}</dd></div>
       <div><dt>End date</dt><dd>{{ currentProject.endDate ? (currentProject.endDate | date:'mediumDate') : '—' }}</dd></div>
+      <div><dt>Completed date</dt><dd>{{ currentProject.completedDate ? (currentProject.completedDate | date:'mediumDate') : '—' }}</dd></div>
       <div class="details-description"><dt>Team members</dt><dd>{{ memberNames(currentProject.memberIds) }}</dd></div>
       <div class="details-description"><dt>Description</dt><dd>{{ currentProject.description || 'No description provided.' }}</dd></div>
     </dl>

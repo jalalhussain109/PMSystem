@@ -186,11 +186,12 @@ namespace PMS.Application.Services
                 return ServiceResult<ProjectDto>.Failure($"Invalid status transition from {project.Status} to {newStatus}");
 
             project.Status = newStatus;
-            project.ModifiedBy = dto.PerformedBy;
+            project.CompletedDate = newStatus == ProjectStatus.Completed ? DateTime.UtcNow : null;
+            if (dto.PerformedBy.HasValue) project.ModifiedBy = dto.PerformedBy;
             project.ModifiedDate = DateTime.UtcNow;
 
             var updated = await _projectRepository.UpdateAsync(project);
-            return ServiceResult<ProjectDto>.Success(_mapper.Map<ProjectDto>(updated));
+            return ServiceResult<ProjectDto>.Success(await BuildProjectDto(updated));
         }
 
         public async Task<ServiceResult<ProjectDto>> AddMemberAsync(long projectId, AddMemberDto dto)
@@ -269,7 +270,7 @@ namespace PMS.Application.Services
         private async Task<ProjectDto> BuildProjectDto(Project project)
         {
             var members = (await _projectMemberRepository.ListByProjectAsync(project.Id)).Where(m => m.IsActive).Select(m => m.UserId).ToArray();
-            return new ProjectDto(project.Id, project.ProjectCode, project.ProjectName, project.Description, project.StartDate, project.EndDate, project.Status, project.Priority, project.ProjectManagerId, project.CreatedDate, project.ModifiedDate, members);
+            return new ProjectDto(project.Id, project.ProjectCode, project.ProjectName, project.Description, project.StartDate, project.EndDate, project.Status, project.Priority, project.ProjectManagerId, project.CreatedDate, project.ModifiedDate, members, project.CompletedDate);
         }
     }
 }

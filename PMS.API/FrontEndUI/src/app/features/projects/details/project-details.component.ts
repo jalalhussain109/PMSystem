@@ -79,6 +79,12 @@ export class ProjectDetailsComponent {
     }).join(', ');
   }
 
+  statusLabel(status?: string): string {
+    return status === 'InProgress' ? 'In Progress'
+      : status === 'OnHold' ? 'On Hold'
+        : status ?? 'Draft';
+  }
+
   private userDisplayName(user: UserDto): string {
     return user.displayName?.trim() || user.userName?.trim() || user.email?.trim() || `User #${user.id}`;
   }

@@ -24,6 +24,9 @@
 @else {
 
   <div class="table-wrap">
+    @if (statusActionError()) {
+      <p class="status-action-error" role="alert">{{ statusActionError() }}</p>
+    }
     <table>
       <thead>
         <tr>
@@ -42,7 +45,17 @@
               <small class="table-id">Project #{{ project.id }}</small>
             </td>
             <td>{{ project.description || '—' }}</td>
-            <td><span class="status-pill">{{ project.status || 'Active' }}</span></td>
+            <td>
+              @if (auth.hasAllPermissions(['Projects.Edit'])) {
+                <select class="status-select" [ngModel]="statusValue(project.status)" (ngModelChange)="changeStatus(project.id, $event)" [disabled]="changingStatusIds().has(project.id)" [attr.aria-label]="'Change status for ' + project.name">
+                  @for (option of projectStatusOptions(project); track option.value) {
+                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              } @else {
+                <span class="status-pill">{{ statusLabel(statusValue(project.status)) }}</span>
+              }
+            </td>
             <td>{{ project.endDate ? (project.endDate | date:'mediumDate') : '—' }}</td>
             <td class="row-actions">
               <a class="table-action icon-action" [routerLink]="['/projects', project.id, 'view']" aria-label="View project details" title="View details">

@@ -88,4 +88,10 @@ export class TaskDetailsComponent {
   priorityName(priority?: number): string {
     return priority === undefined ? '—' : ['Low', 'Medium', 'High', 'Critical'][priority] ?? String(priority);
   }
+
+  statusLabel(status?: string): string {
+    return status === 'InProgress' ? 'In Progress'
+      : status === 'OnHold' ? 'On Hold'
+        : status ?? 'Open';
+  }
 }

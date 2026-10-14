@@ -46,6 +46,9 @@
     </div>
   }
   <div class="table-wrap">
+    @if (statusActionError()) {
+      <p class="status-action-error" role="alert">{{ statusActionError() }}</p>
+    }
     <table>
       <thead>
         <tr>
@@ -61,7 +64,19 @@
           <tr>
             <td><strong>{{ task.title }}</strong><small class="table-id">Task #{{ task.id }}</small></td>
             <td>{{ task.projectName || '—' }}</td>
-            <td><span class="status-pill">{{ task.status || 'Open' }}</span></td>
+            <td>
+              @if (auth.hasAllPermissions(['Tasks.Edit'])) {
+                <select class="status-select" [ngModel]="task.status || 'Open'" (ngModelChange)="changeStatus(task.id, $event)" [disabled]="changingStatusIds().has(task.id)" [attr.aria-label]="'Change status for ' + task.title">
+                  <option [ngValue]="'Open'">Open</option>
+                  <option [ngValue]="'InProgress'">In Progress</option>
+                  <option [ngValue]="'OnHold'">On Hold</option>
+                  <option [ngValue]="'Completed'">Completed</option>
+                  <option [ngValue]="'Cancelled'">Cancelled</option>
+                </select>
+              } @else {
+                <span class="status-pill">{{ statusLabel(task.status) }}</span>
+              }
+            </td>
             <td>{{ task.dueDate ? (task.dueDate | date:'mediumDate') : '—' }}</td>
             <td class="task-actions">
               <a [routerLink]="['/tasks', task.id, 'view']">View</a>

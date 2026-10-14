@@ -1,15 +1,21 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProjectDto, ProjectService } from './project.service';
 
+interface ProjectStatusOption {
+  value: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-projects',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './projects.component.html',
   styleUrl: './projects.component.css'
 })
@@ -19,8 +25,10 @@ export class ProjectsComponent {
   private requestId = 0;
 
   readonly projects = signal<ProjectDto[]>([]);
+  readonly changingStatusIds = signal<Set<number>>(new Set());
   readonly loading = signal(false);
   readonly error = signal('');
+  readonly statusActionError = signal('');
   readonly page = signal(1);
   readonly pageSize = signal(20);
   readonly totalCount = signal(0);
@@ -28,6 +36,59 @@ export class ProjectsComponent {
 
   constructor() {
     this.reload();
+  }
+
+  statusValue(status?: string): string {
+    const normalized = status?.replace(/\s+/g, '').toLocaleLowerCase();
+    return ({
+      draft: 'Draft',
+      planning: 'Planning',
+      inprogress: 'InProgress',
+      onhold: 'OnHold',
+      completed: 'Completed',
+      cancelled: 'Cancelled'
+    } as Record<string, string>)[normalized ?? ''] ?? 'Draft';
+  }
+
+  statusLabel(status?: string): string {
+    return status === 'InProgress' ? 'In Progress'
+      : status === 'OnHold' ? 'On Hold'
+        : status ?? 'Draft';
+  }
+
+  projectStatusOptions(project: ProjectDto): ProjectStatusOption[] {
+    const current = this.statusValue(project.status);
+    const transitions: Record<string, string[]> = {
+      Draft: ['Planning', 'Cancelled'],
+      Planning: ['InProgress', 'Cancelled'],
+      InProgress: ['Completed', 'OnHold', 'Cancelled'],
+      OnHold: ['InProgress']
+    };
+    return [current, ...(transitions[current] ?? [])]
+      .map(value => ({ value, label: this.statusLabel(value) }));
+  }
+
+  changeStatus(projectId: number, newStatus: string): void {
+    const project = this.projects().find(item => item.id === projectId);
+    if (!project || this.changingStatusIds().has(projectId)
+      || this.statusValue(project.status) === newStatus) return;
+
+    this.statusActionError.set('');
+    this.changingStatusIds.update(ids => new Set(ids).add(projectId));
+    this.service.changeStatus(projectId, newStatus).pipe(finalize(() => {
+      this.changingStatusIds.update(ids => {
+        const next = new Set(ids);
+        next.delete(projectId);
+        return next;
+      });
+    })).subscribe({
+      next: updated => this.projects.update(items => items.map(item => item.id === updated.id ? updated : item)),
+      error: (err: HttpErrorResponse) => this.statusActionError.set(err.status === 401
+        ? 'Your session may have expired. Please sign in again.'
+        : err.status === 403
+          ? 'Your account does not have permission to change project status.'
+          : 'Could not update the project status. The selected transition may not be allowed.')
+    });
   }
 
   deleteProject(id: number): void {
@@ -50,6 +111,7 @@ export class ProjectsComponent {
     this.page.set(page);
     this.loading.set(true);
     this.error.set('');
+    this.statusActionError.set('');
     this.service.getAll({ page, pageSize: this.pageSize() }).pipe(finalize(() => {
       if (requestId === this.requestId) this.loading.set(false);
     })).subscribe({

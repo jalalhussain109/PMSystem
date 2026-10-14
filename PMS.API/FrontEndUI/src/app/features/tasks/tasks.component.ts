@@ -22,9 +22,11 @@ export class TasksComponent {
   private requestId = 0;
 
   readonly tasks = signal<TaskDto[]>([]);
+  readonly changingStatusIds = signal<Set<number>>(new Set());
   readonly projects = signal<ProjectDto[]>([]);
   readonly loading = signal(false);
   readonly error = signal('');
+  readonly statusActionError = signal('');
   readonly projectsLoading = signal(false);
   readonly projectsError = signal('');
   readonly projectFilter = signal<number | null>(null);
@@ -41,11 +43,40 @@ export class TasksComponent {
     this.loadProjects();
   }
 
+  statusLabel(status?: string): string {
+    return status === 'InProgress' ? 'In Progress'
+      : status === 'OnHold' ? 'On Hold'
+        : status ?? 'Open';
+  }
+
+  changeStatus(taskId: number, newStatus: string): void {
+    const task = this.tasks().find(item => item.id === taskId);
+    if (!task || this.changingStatusIds().has(taskId) || task.status === newStatus) return;
+
+    this.statusActionError.set('');
+    this.changingStatusIds.update(ids => new Set(ids).add(taskId));
+    this.service.changeStatus(taskId, newStatus).pipe(finalize(() => {
+      this.changingStatusIds.update(ids => {
+        const next = new Set(ids);
+        next.delete(taskId);
+        return next;
+      });
+    })).subscribe({
+      next: updated => this.tasks.update(items => items.map(item => item.id === updated.id ? updated : item)),
+      error: (err: HttpErrorResponse) => this.statusActionError.set(err.status === 401
+        ? 'Your session may have expired. Please sign in again.'
+        : err.status === 403
+          ? 'Your account does not have permission to change task status.'
+          : 'Could not update the task status.')
+    });
+  }
+
   reload(page = this.page()): void {
     const requestId = ++this.requestId;
     this.page.set(page);
     this.loading.set(true);
     this.error.set('');
+    this.statusActionError.set('');
     this.service.getAll({
       page,
       pageSize: this.pageSize(),

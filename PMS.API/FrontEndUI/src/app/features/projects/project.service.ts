@@ -10,6 +10,7 @@ export interface ProjectDto {
   status?: string;
   startDate?: string | null;
   endDate?: string | null;
+  completedDate?: string | null;
   priority?: number;
   projectManagerId?: number | null;
   memberIds?: number[];
@@ -37,6 +38,7 @@ interface ProjectResponse {
   status?: string | number;
   startDate?: string | null;
   endDate?: string | null;
+  completedDate?: string | null;
   priority?: number;
   projectManagerId?: number | null;
   memberIds?: number[];
@@ -65,13 +67,16 @@ export interface PagedProjectResult {
   totalPages: number;
 }
 
-const PROJECT_STATUSES = ['Draft', 'Planning', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
+const PROJECT_STATUSES = ['Draft', 'Planning', 'InProgress', 'OnHold', 'Completed', 'Cancelled'];
 
 function mapProject(project: ProjectResponse): ProjectDto {
+  const status = typeof project.status === 'number'
+    ? PROJECT_STATUSES[project.status]
+    : project.status?.replace(/\s+/g, '');
   return {
     ...project,
     name: project.name ?? project.projectName ?? '',
-    status: typeof project.status === 'number' ? PROJECT_STATUSES[project.status] : project.status
+    status
   };
 }
 
@@ -146,6 +151,10 @@ export class ProjectService {
 
   update(id: number, project: UpdateProjectDto): Observable<ProjectDto> {
     return this.api.put<ProjectResponse, UpdateProjectDto>(`Projects/${id}`, project).pipe(map(mapProject));
+  }
+
+  changeStatus(id: number, newStatus: string): Observable<ProjectDto> {
+    return this.api.put<ProjectResponse, { newStatus: string }>(`Projects/${id}/status`, { newStatus }).pipe(map(mapProject));
   }
 
   delete(id: number): Observable<void> {
