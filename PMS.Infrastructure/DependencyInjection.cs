@@ -7,6 +7,7 @@ using PMS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using PMS.Domain.Entities;
 using PMS.Infrastructure.Repositories;
+using PMS.Application.Interfaces;
 
 namespace PMS.Infrastructure
 {
@@ -19,10 +20,11 @@ namespace PMS.Infrastructure
 
             services.AddScoped<IProjectRepository, ProjectRepository>();
             services.AddScoped<ITaskRepository, TaskRepository>();
-            services.AddScoped<PMS.Domain.Interfaces.IProjectMemberRepository, PMS.Infrastructure.Repositories.ProjectMemberRepository>();
+            services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
+            services.AddTransient<IApiLoggingRepository, ApiLoggingRepository>();
             // Identity
-            services.AddScoped<PMS.Application.Interfaces.IUserRoleService, PMS.Infrastructure.Identity.UserRoleService>();
-           
+
+
             // Register open-generic repository mapping
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
 

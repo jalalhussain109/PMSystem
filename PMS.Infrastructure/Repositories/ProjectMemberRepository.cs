@@ -4,11 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using PMS.Domain.Entities;
+using PMS.Domain.Interfaces;
 using PMS.Infrastructure.Data;
 
 namespace PMS.Infrastructure.Repositories
 {
-    public class ProjectMemberRepository : GenericRepository<ProjectMember, long>, PMS.Domain.Interfaces.IProjectMemberRepository
+    public class ProjectMemberRepository : GenericRepository<ProjectMember, long>, IProjectMemberRepository
     {
         private readonly ApplicationDbContext _dbContext;
 

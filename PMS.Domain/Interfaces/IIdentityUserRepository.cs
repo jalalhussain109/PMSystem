@@ -11,14 +11,14 @@ namespace PMS.Domain.Interfaces
 
         Task<ApplicationUser?> GetByUserNameAsync(string userName);
 
-        Task<IdentityResult> CreateAsync( ApplicationUser user, string password);
+        Task<IdentityResult> CreateAsync(ApplicationUser user, string password);
 
         Task<IdentityResult> UpdateAsync(ApplicationUser user);
 
         Task<IdentityResult> DeleteAsync(ApplicationUser user);
-    Task<bool> CheckPasswordAsync(ApplicationUser user, string password);
-    Task<IdentityResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword);
-    Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user);
-    Task<IdentityResult> ResetPasswordAsync(ApplicationUser user, string token, string newPassword);
+        Task<bool> CheckPasswordAsync(ApplicationUser user, string password);
+        Task<IdentityResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword);
+        Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user);
+        Task<IdentityResult> ResetPasswordAsync(ApplicationUser user, string token, string newPassword);
     }
 }

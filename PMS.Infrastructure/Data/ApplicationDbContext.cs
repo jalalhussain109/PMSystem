@@ -12,7 +12,7 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRo
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
-
+    public DbSet<ApiLog> ApiLogs => Set<ApiLog>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

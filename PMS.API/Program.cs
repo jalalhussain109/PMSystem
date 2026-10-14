@@ -1,22 +1,39 @@
+using LMKR.Shared.Logging.Extensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using PMS.API.Extensions;
 using PMS.API.Middleware;
 using PMS.Application.Interfaces;
 using PMS.Application.Mapping;
 using PMS.Application.Services;
+using PMS.Domain.Constants;
 using PMS.Domain.Entities;
 using PMS.Domain.Interfaces;
 using PMS.Infrastructure;
 using PMS.Infrastructure.Data;
 using PMS.Infrastructure.Identity;
-using PMS.Domain.Constants;
+using Serilog;
+using Serilog.Formatting.Json;
+using System.IO;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog for structured (JSON) file logging in PMS.API/Logs
+var logsFolder = Path.Combine(builder.Environment.ContentRootPath, "Logs");
+Directory.CreateDirectory(logsFolder);
+var logFile = Path.Combine(logsFolder, "pms-.json"); // rolling daily files
+
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File(new JsonFormatter(renderMessage: true), logFile, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 31)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -66,9 +83,10 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IEffectivePermissionService, IdentityPermissionService>();
-builder.Services.AddScoped<PMS.Application.Interfaces.IProjectMemberService, PMS.Application.Services.ProjectMemberService>();
+builder.Services.AddScoped<IProjectMemberService, ProjectMemberService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 // AutoMapper
 builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
@@ -83,7 +101,7 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
-
+builder.AddSerilogExtention();
 
 var app = builder.Build();
 
@@ -99,15 +117,18 @@ if (app.Environment.IsDevelopment())
 }
 
 // Global Exception Middleware
-app.UseMiddleware<GlobalExceptionMiddleware>();
+
 
 app.UseHttpsRedirection();
 
 app.UseCors("Client");
 
+app.UseRouting();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseApiLogsMiddleware();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
 
 app.MapControllers();
 
@@ -116,11 +137,9 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
 
-    var roleManager =
-        services.GetRequiredService<RoleManager<IdentityRole<long>>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<long>>>();
 
-    var userManager =
-        services.GetRequiredService<UserManager<ApplicationUser>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
     await SeedRolesAsync(roleManager);
     await SeedAdminUserAsync(userManager);
@@ -128,6 +147,8 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
+
+#region Seed Admin User and Roles
 static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
 {
     const string adminUserName = "admin";
@@ -142,7 +163,7 @@ static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
         {
             UserName = adminUserName,
             Email = adminEmail,
-            DisplayName = "Administrator",
+            DisplayName = "Jalal Hussain",
             EmailConfirmed = true,
             IsActive = true,
             CreatedDate = DateTime.UtcNow
@@ -155,8 +176,6 @@ static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
         var result = await userManager.AddToRoleAsync(adminUser, "Admin");
     }
 }
-
-
 static async Task SeedRolesAsync(RoleManager<IdentityRole<long>> roleManager)
 {
     var roles = new Dictionary<string, string[]>
@@ -190,3 +209,4 @@ static async Task SeedRolesAsync(RoleManager<IdentityRole<long>> roleManager)
         }
     }
 }
+#endregion

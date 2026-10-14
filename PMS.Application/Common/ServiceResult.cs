@@ -27,4 +27,5 @@ public class ServiceResult<T>
             Succeeded = false,
             NotFound = true
         };
+
 }

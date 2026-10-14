@@ -4,14 +4,11 @@ using PMS.Domain.Entities;
 
 namespace PMS.Domain.Interfaces
 {
-    public interface IProjectMemberRepository
+    public interface IProjectMemberRepository : IGenericRepository<ProjectMember, long>
     {
-        Task<ProjectMember?> GetByIdAsync(long id);
+    
         Task<IEnumerable<ProjectMember>> ListAsync();
         Task<IEnumerable<ProjectMember>> ListByProjectAsync(long projectId);
         Task<ProjectMember?> GetByProjectAndUserAsync(long projectId, long userId);
-        Task<ProjectMember> AddAsync(ProjectMember member);
-        Task<ProjectMember> UpdateAsync(ProjectMember member);
-        Task<bool> DeleteAsync(long id);
     }
 }

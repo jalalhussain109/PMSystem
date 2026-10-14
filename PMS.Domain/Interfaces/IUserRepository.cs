@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using PMS.Domain.Entities;
 
-namespace PMS.Infrastructure.Interfaces
+namespace PMS.Domain.Interfaces
 {
     public interface IUserRepository
     {
