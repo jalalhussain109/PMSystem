@@ -2,8 +2,8 @@ using LMKR.Shared.Logging.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using PMS.API.Extensions;
 using PMS.API.Middleware;
 using PMS.Application.Interfaces;
@@ -11,13 +11,10 @@ using PMS.Application.Mapping;
 using PMS.Application.Services;
 using PMS.Domain.Constants;
 using PMS.Domain.Entities;
-using PMS.Domain.Interfaces;
 using PMS.Infrastructure;
-using PMS.Infrastructure.Data;
 using PMS.Infrastructure.Identity;
 using Serilog;
 using Serilog.Formatting.Json;
-using System.IO;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,7 +51,32 @@ builder.Services.AddScoped<IUserService, UserService>();
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "PMS API",
+        Version = "v1"
+    });
+
+    // JWT Bearer Authentication
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header. Example: Bearer {token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    c.AddSecurityRequirement(document =>
+        new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document)] =
+                new List<string>()
+        });
+});
 
 // JWT Authentication
 builder.Services.AddAuthentication(options =>
