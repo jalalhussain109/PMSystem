@@ -361,3 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/PMS.API/FrontEndUI/.angular/cache/22.2.2/pms-angular22/.tsbuildinfo

@@ -58,13 +58,11 @@ export class AuthService {
   }
 
   getRoles(): string[] {
-    return this.readAccessValues(ROLES_KEY, () => {
+  return this.readAccessValues(ROLES_KEY, 
+    () => {
       const token = this.getToken();
       const claims = token ? this.decodeToken(token) : {};
-      return this.claimValues(claims, [
-        'role',
-        'roles'
-      ]);
+      return this.claimValues(claims, [ 'role', 'roles']);
     });
   }
 
@@ -130,7 +128,8 @@ export class AuthService {
     if (storedValue) {
       try {
         const parsed: unknown = JSON.parse(storedValue);
-        if (Array.isArray(parsed) && parsed.every(value => typeof value === 'string')) return parsed;
+        if (Array.isArray(parsed) && parsed.every(value => typeof value === 'string')) 
+          return parsed;
       } catch {
         localStorage.removeItem(key);
       }

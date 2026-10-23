@@ -18,9 +18,9 @@ export const routes: Routes = [
       {
         path: 'projects',
         canActivate: [permissionGuard],
-        data: { permissions: ['Projects.View'] },
+        data: { permissions: ['Projects.View'] , roles: ['ProjectManager', 'Admin']},
         children: [
-          { path: 'assign-team', canActivate: [permissionGuard], data: { permissions: ['Projects.Edit'] }, loadComponent: () => import('./features/projects/assign-team/assign-project-user.component').then(m => m.AssignProjectUserComponent) },
+          { path: 'assign-team', canActivate: [permissionGuard], data: { permissions: ['Projects.Edit'], roles:['Admin'] }, loadComponent: () => import('./features/projects/assign-team/assign-project-user.component').then(m => m.AssignProjectUserComponent) },
           { path: 'add', canActivate: [permissionGuard], data: { permissions: ['Projects.Create'] }, loadComponent: () => import('./features/projects/form/project-form.component').then(m => m.ProjectFormComponent) },
           { path: ':id/edit', canActivate: [permissionGuard], data: { permissions: ['Projects.Edit'] }, loadComponent: () => import('./features/projects/form/project-form.component').then(m => m.ProjectFormComponent) },
           { path: ':id/view', canActivate: [permissionGuard], data: { permissions: ['Projects.View'] }, loadComponent: () => import('./features/projects/details/project-details.component').then(m => m.ProjectDetailsComponent) },
