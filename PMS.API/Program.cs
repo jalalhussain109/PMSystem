@@ -13,12 +13,13 @@ using PMS.Domain.Constants;
 using PMS.Domain.Entities;
 using PMS.Infrastructure;
 using PMS.Infrastructure.Identity;
+using PMS.Infrastructure.Interceptors;
 using Serilog;
 using Serilog.Formatting.Json;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddHttpContextAccessor();
 // Configure Serilog for structured (JSON) file logging in PMS.API/Logs
 var logsFolder = Path.Combine(builder.Environment.ContentRootPath, "Logs");
 Directory.CreateDirectory(logsFolder);
@@ -32,12 +33,15 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+{
+    var interceptor = serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>();
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.AddInterceptors(interceptor);
+});
 
 // ASP.NET Core Identity
-builder.Services
-    .AddIdentity<ApplicationUser, IdentityRole<long>>()
+builder.Services.AddIdentity<ApplicationUser, IdentityRole<long>>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
@@ -101,14 +105,18 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-// Infrastructure and application DI
 
+// Infrastructure and application DI
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IEffectivePermissionService, IdentityPermissionService>();
 builder.Services.AddScoped<IProjectMemberService, ProjectMemberService>();
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+
 builder.Services.AddInfrastructure(builder.Configuration);
 // AutoMapper
 builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
@@ -154,81 +162,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed roles and permissions
-//using (var scope = app.Services.CreateScope())
-//{
-//    var services = scope.ServiceProvider;
-
-//    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<long>>>();
-
-//    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-
-//    await SeedRolesAsync(roleManager);
-//    await SeedAdminUserAsync(userManager);
-//}
-
 app.Run();
-
-
-#region Seed Admin User and Roles
-static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
-{
-    const string adminUserName = "admin";
-    const string adminEmail = "admin@pms.local";
-    const string adminPassword = "Admin@123";
-
-    var adminUser = await userManager.FindByNameAsync(adminUserName);
-
-    if (adminUser == null)
-    {
-        adminUser = new ApplicationUser
-        {
-            UserName = adminUserName,
-            Email = adminEmail,
-            DisplayName = "Jalal Hussain",
-            EmailConfirmed = true,
-            IsActive = true,
-            CreatedDate = DateTime.UtcNow
-        };
-        var result = await userManager.CreateAsync(adminUser, adminPassword);
-    }
-
-    if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
-    {
-        var result = await userManager.AddToRoleAsync(adminUser, "Admin");
-    }
-}
-static async Task SeedRolesAsync(RoleManager<IdentityRole<long>> roleManager)
-{
-    var roles = new Dictionary<string, string[]>
-    {
-        { "Admin", new[] { "Projects.View", "Projects.Create", "Projects.Edit", "Projects.Delete", "Projects.AssignTeam", "Users.Manage" } },
-        { "ProjectManager", new[] { "Projects.View", "Projects.Create", "Projects.Edit", "Tasks.View","Tasks.Create","Tasks.Edit", "Projects.AssignTeam" } },
-        { "Member", new[] { "Projects.View", "Tasks.View", "Tasks.Create", "Tasks.Edit" } },
-        { "User", new[] { "Projects.View" } }
-    };
-
-    foreach (var kv in roles)
-    {
-        var roleName = kv.Key;
-        var permissions = kv.Value;
-        var role = await roleManager.FindByNameAsync(roleName);
-        if (role == null)
-        {
-            role = new IdentityRole<long> { Name = roleName };
-            var created = await roleManager.CreateAsync(role);
-            if (!created.Succeeded) continue;
-            role = await roleManager.FindByNameAsync(roleName);
-        }
-
-        var existing = await roleManager.GetClaimsAsync(role);
-        foreach (var perm in permissions)
-        {
-            if (!existing.Any(c => c.Type == PermissionConstants.ClaimType && c.Value == perm))
-            {
-                await roleManager.AddClaimAsync(role, new System.Security.Claims.Claim(PermissionConstants.ClaimType, perm));
-            }
-        }
-    }
-}
-#endregion

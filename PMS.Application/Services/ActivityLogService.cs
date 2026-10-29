@@ -16,10 +16,7 @@ namespace PMS.Application.Services
             this.activityLogRepository = activityLogRepository;
         }
 
-        public async Task<List<ActivityLog>> GetHistoryAsync(
-            string entityName,
-            string entityId,
-            CancellationToken cancellationToken = default)
+        public async Task<List<ActivityLog>> GetHistoryAsync(string entityName, string entityId, CancellationToken cancellationToken = default)
         {
             return await activityLogRepository.GetHistoryAsync(entityName, entityId, cancellationToken);
         }

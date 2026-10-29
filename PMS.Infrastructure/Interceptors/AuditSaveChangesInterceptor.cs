@@ -1,14 +1,12 @@
-﻿
-using global::PMS.Application.Interfaces;
-using global::PMS.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using PMS.Application.Interfaces;
+using PMS.Domain.Entities;
 using System.Globalization;
 
 namespace PMS.Infrastructure.Interceptors
 {
-
     public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
     {
         private readonly ICurrentUserService _currentUser;
@@ -24,9 +22,7 @@ namespace PMS.Infrastructure.Interceptors
             _currentUser = currentUser;
         }
 
-        public override InterceptionResult<int> SavingChanges(
-            DbContextEventData eventData,
-            InterceptionResult<int> result)
+        public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
         {
             if (!_savingAudit && eventData.Context is { } context)
             {
@@ -36,18 +32,14 @@ namespace PMS.Infrastructure.Interceptors
             return base.SavingChanges(eventData, result);
         }
 
-        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
-            DbContextEventData eventData,
-            InterceptionResult<int> result,
-            CancellationToken cancellationToken = default)
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
         {
             if (!_savingAudit && eventData.Context is { } context)
             {
                 CaptureChanges(context);
             }
 
-            return base.SavingChangesAsync(
-                eventData, result, cancellationToken);
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
         }
 
 
@@ -61,18 +53,13 @@ namespace PMS.Infrastructure.Interceptors
 
             foreach (var audit in _pendingAudits)
             {
-                var keyProperties = audit.Entry.Properties
-                    .Where(p => p.Metadata.IsPrimaryKey())
-                    .ToList();
+                var keyProperties = audit.Entry.Properties.Where(p => p.Metadata.IsPrimaryKey()).ToList();
 
-                var entityId = string.Join(",",
-                    keyProperties.Select(p =>
-                        ConvertValue(p.CurrentValue) ?? ""));
+                var entityId = string.Join(",", keyProperties.Select(p => ConvertValue(p.CurrentValue) ?? ""));
 
                 if (audit.Changes.Count == 0)
                 {
-                    logs.Add(CreateLog(
-                        audit, entityId, null, null, null, now));
+                    logs.Add(CreateLog(audit, entityId, null, null, null, now));
                 }
 
                 foreach (var change in audit.Changes)
@@ -90,13 +77,7 @@ namespace PMS.Infrastructure.Interceptors
             return logs;
         }
 
-        private ActivityLog CreateLog(
-            PendingAudit audit,
-            string entityId,
-            string? fieldName,
-            string? oldValue,
-            string? newValue,
-            DateTime now)
+        private ActivityLog CreateLog(PendingAudit audit, string entityId, string? fieldName, string? oldValue, string? newValue, DateTime now)
         {
             return new ActivityLog
             {
@@ -162,7 +143,7 @@ namespace PMS.Infrastructure.Interceptors
                     if (property.Metadata.IsPrimaryKey())
                         continue;
 
-                    if (ShouldIgnore(property.Metadata.Name))
+                    if (!ShouldAudit(entry))
                         continue;
 
                     var oldValue = ConvertValue(property.OriginalValue);
@@ -170,6 +151,8 @@ namespace PMS.Infrastructure.Interceptors
 
                     if (entry.State == EntityState.Added)
                     {
+                        if (property.CurrentValue == null)
+                            continue;
                         audit.Changes.Add(new FieldChange(
                             property.Metadata.Name,
                             null,
@@ -200,6 +183,11 @@ namespace PMS.Infrastructure.Interceptors
                     _pendingAudits.Add(audit);
                 }
             }
+        }
+
+        private static bool ShouldAudit(EntityEntry entry)
+        {
+            return entry.Entity is Project  or ProjectMember or TaskItem;
         }
 
         private static bool ShouldIgnore(string propertyName)

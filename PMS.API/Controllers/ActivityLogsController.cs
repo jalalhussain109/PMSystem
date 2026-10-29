@@ -28,10 +28,7 @@ public class ActivityLogsController : ControllerBase
                 "Entity name and ID are required.");
         }
 
-        var history = await _service.GetHistoryAsync(
-            entityName,
-            entityId,
-            cancellationToken);
+        var history = await _service.GetHistoryAsync(entityName, entityId, cancellationToken);
 
         return Ok(history);
     }

@@ -17,6 +17,60 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRo
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<ApiLog> ApiLogs => Set<ApiLog>();
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        var ownsTransaction = Database.CurrentTransaction == null;
+
+        await using var transaction = ownsTransaction ? await Database.BeginTransactionAsync(cancellationToken) : null;
+
+        try
+        {
+            // 1. Save Project / Task / ProjectMember changes.
+            // The interceptor captures changes before this save.
+            var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+
+            // 2. Generate audit records after saving,
+            // so database-generated IDs are available.
+            if (_auditInterceptor.HasPendingAudits)
+            {
+                var logs = _auditInterceptor.BuildAuditLogs();
+
+                _auditInterceptor.BeginAuditSave();
+
+                try
+                {
+                    ActivityLogs.AddRange(logs);
+
+                    // 3. Save audit records.
+                    await base.SaveChangesAsync(cancellationToken);
+                }
+                finally
+                {
+                    _auditInterceptor.EndAuditSave();
+                }
+            }
+
+            // 4. Commit business and audit changes together.
+            if (transaction != null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            return result;
+        }
+        catch
+        {
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            _auditInterceptor.EndAuditSave();
+
+            throw;
+        }
+    }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

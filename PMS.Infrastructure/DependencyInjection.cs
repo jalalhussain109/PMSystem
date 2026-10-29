@@ -15,6 +15,9 @@ namespace PMS.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
+            // Register open-generic repository mapping
+            services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
+
             // Infrastructure repositories
             services.AddScoped<IIdentityUserRepository, IdentityUserRepository>();
 
@@ -22,12 +25,7 @@ namespace PMS.Infrastructure
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
             services.AddTransient<IApiLoggingRepository, ApiLoggingRepository>();
-            // Identity
-
-
-            // Register open-generic repository mapping
-            services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
-
+            services.AddTransient<IActivityLogRepository, ActivityLogRepository>();
             return services;
         }
     }
