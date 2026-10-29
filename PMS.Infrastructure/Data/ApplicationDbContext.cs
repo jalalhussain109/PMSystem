@@ -2,13 +2,17 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PMS.Domain.Entities;
+using PMS.Infrastructure.Interceptors;
 
 public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRole<long>, long>
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+    private readonly AuditSaveChangesInterceptor _auditInterceptor;
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, AuditSaveChangesInterceptor auditInterceptor) : base(options)
     {
+        _auditInterceptor = auditInterceptor;
     }
 
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
@@ -16,6 +20,43 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRo
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ActivityLog>(entity =>
+        {
+            entity.ToTable("ActivityLogs");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.EntityName)
+                .HasMaxLength(150)
+                .IsRequired();
+
+            entity.Property(x => x.EntityId)
+                .HasMaxLength(150)
+                .IsRequired();
+
+            entity.Property(x => x.Action)
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.FieldName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.OldValue)
+                .HasColumnType("nvarchar(max)");
+
+            entity.Property(x => x.NewValue)
+                .HasColumnType("nvarchar(max)");
+
+            entity.HasIndex(x => new
+            {
+                x.EntityName,
+                x.EntityId,
+                x.CreatedAt
+            });
+
+            entity.HasIndex(x => x.ChangeSetId);
+        });
 
         modelBuilder.Entity<TaskItem>(entity =>
         {
