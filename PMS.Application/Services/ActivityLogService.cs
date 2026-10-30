@@ -10,15 +10,24 @@ namespace PMS.Application.Services
     public class ActivityLogService : IActivityLogService
     {
         private readonly IActivityLogRepository activityLogRepository;
+        private readonly AutoMapper.IMapper _mapper;
 
-        public ActivityLogService(IActivityLogRepository activityLogRepository)
+        public ActivityLogService(IActivityLogRepository activityLogRepository, AutoMapper.IMapper mapper)
         {
             this.activityLogRepository = activityLogRepository;
+            this._mapper = mapper;
         }
 
-        public async Task<List<ActivityLog>> GetHistoryAsync(string entityName, string entityId, CancellationToken cancellationToken = default)
+        public async Task<List<ActivityLogDto>> GetHistoryAsync(string entityName, string entityId, CancellationToken cancellationToken = default)
         {
-            return await activityLogRepository.GetHistoryAsync(entityName, entityId, cancellationToken);
+            var result = await activityLogRepository.GetHistoryAsync(entityName, entityId, cancellationToken);
+
+            if (result != null)
+            {
+                return result.Select(_mapper.Map<ActivityLogDto>).ToList();
+            }
+
+            return new List<ActivityLogDto>();
         }
     }
 }

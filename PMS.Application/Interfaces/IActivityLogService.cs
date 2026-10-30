@@ -1,9 +1,10 @@
-﻿using PMS.Domain.Entities;
+﻿using PMS.Application.DTOs;
+using PMS.Domain.Entities;
 
 namespace PMS.Application.Interfaces
 {
     public interface IActivityLogService
     {
-        Task<List<ActivityLog>> GetHistoryAsync(string entityName, string entityId, CancellationToken cancellationToken = default);
+        Task<List<ActivityLogDto>> GetHistoryAsync(string entityName, string entityId, CancellationToken cancellationToken = default);
     }
 }

@@ -20,18 +20,27 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRo
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        var hasAuditableChanges = ChangeTracker.Entries().Any(e =>
+                e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+                && (e.Entity is Project or TaskItem or ProjectMember));
+
+        if (!hasAuditableChanges)
+        {
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
         var ownsTransaction = Database.CurrentTransaction == null;
 
-        await using var transaction = ownsTransaction ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        await using var transaction = ownsTransaction
+            ? await Database.BeginTransactionAsync(cancellationToken)
+            : null;
 
         try
         {
-            // 1. Save Project / Task / ProjectMember changes.
-            // The interceptor captures changes before this save.
-            var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            var result = await base.SaveChangesAsync(
+                acceptAllChangesOnSuccess,
+                cancellationToken);
 
-            // 2. Generate audit records after saving,
-            // so database-generated IDs are available.
             if (_auditInterceptor.HasPendingAudits)
             {
                 var logs = _auditInterceptor.BuildAuditLogs();
@@ -42,8 +51,9 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRo
                 {
                     ActivityLogs.AddRange(logs);
 
-                    // 3. Save audit records.
-                    await base.SaveChangesAsync(cancellationToken);
+                    await base.SaveChangesAsync(
+                        acceptAllChangesOnSuccess,
+                        cancellationToken);
                 }
                 finally
                 {
@@ -51,7 +61,6 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRo
                 }
             }
 
-            // 4. Commit business and audit changes together.
             if (transaction != null)
             {
                 await transaction.CommitAsync(cancellationToken);
@@ -67,7 +76,6 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser, IdentityRo
             }
 
             _auditInterceptor.EndAuditSave();
-
             throw;
         }
     }

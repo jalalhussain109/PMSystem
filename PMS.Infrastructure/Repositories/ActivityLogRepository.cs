@@ -22,9 +22,7 @@ namespace PMS.Infrastructure.Repositories
         {
             return await _context.ActivityLogs
                 .AsNoTracking()
-                .Where(x =>
-                    x.EntityName == entityName &&
-                    x.EntityId == entityId)
+                .Where(x => x.EntityName == entityName && x.EntityId == entityId)
                 .OrderByDescending(x => x.CreatedAt)
                 .Select(x => new ActivityLog
                 {

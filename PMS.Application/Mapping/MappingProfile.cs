@@ -17,6 +17,7 @@ namespace PMS.Application.Mapping
                 .ForCtorParam("AssigneeName", opt => opt.MapFrom(src => src.AssignedUser != null ? (src.AssignedUser.DisplayName ?? src.AssignedUser.UserName) : null));
             
             CreateMap<ApplicationUser, UserDto>();
+            CreateMap<ActivityLog, ActivityLogDto>();
             CreateMap<ProjectMember, ProjectMemberDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.UserName : string.Empty));
             CreateMap<ApplicationUser, AuthResultDto>()

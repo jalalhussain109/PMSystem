@@ -143,7 +143,13 @@ namespace PMS.Infrastructure.Interceptors
                     if (property.Metadata.IsPrimaryKey())
                         continue;
 
-                    if (!ShouldAudit(entry))
+                    if (entry.State == EntityState.Modified && !property.IsModified)
+                        continue;
+
+                    if (!ShouldAuditEntity(entry))
+                        continue;
+
+                    if (!ShouldAuditProperty(property))
                         continue;
 
                     var oldValue = ConvertValue(property.OriginalValue);
@@ -165,10 +171,7 @@ namespace PMS.Infrastructure.Interceptors
                             oldValue,
                             null));
                     }
-                    else if (entry.State == EntityState.Modified &&
-                             property.IsModified &&
-                             !Equals(property.OriginalValue,
-                                     property.CurrentValue))
+                    else if (entry.State == EntityState.Modified && property.IsModified && !Equals(property.OriginalValue,  property.CurrentValue))
                     {
                         audit.Changes.Add(new FieldChange(
                             property.Metadata.Name,
@@ -177,28 +180,31 @@ namespace PMS.Infrastructure.Interceptors
                     }
                 }
 
-                if (audit.Changes.Count > 0 ||
-                    entry.State != EntityState.Modified)
+                if (audit.Changes.Count > 0 || entry.State != EntityState.Modified)
                 {
                     _pendingAudits.Add(audit);
                 }
             }
         }
 
-        private static bool ShouldAudit(EntityEntry entry)
+        private static bool ShouldAuditEntity(EntityEntry entry)
         {
-            return entry.Entity is Project  or ProjectMember or TaskItem;
+            return entry.Entity is Project or ProjectMember or TaskItem;
         }
 
-        private static bool ShouldIgnore(string propertyName)
+        private static bool ShouldAuditProperty(PropertyEntry property)
         {
-            return propertyName is
-                "PasswordHash" or
-                "SecurityStamp" or
-                "ConcurrencyStamp" or
-                "AccessFailedCount" or
-                "LockoutEnd";
+            return !IgnoredProperties.Contains(property.Metadata.Name);
         }
+
+        private static readonly HashSet<string> IgnoredProperties =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                "CreatedBy",
+                "CreatedDate",
+                "ModifiedBy",
+                "ModifiedDate"
+            };
 
         private static string? ConvertValue(object? value)
         {
